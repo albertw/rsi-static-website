@@ -1,0 +1,1881 @@
+<!-- timer changed timeRemaining = 20-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Morse Code Quiz Game</title>
+  <!-- Add favicons in various formats for different devices -->
+  <!-- .ico format is specific for icons and can contain multiple sizes -->
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <!-- PNG format favicons for modern browsers -->
+  <link rel="icon" href="favicon-16.png" sizes="16x16" type="image/png">
+  <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" sizes="180x180">
+  <link rel="manifest" href="site.webmanifest">
+  <!-- Add Supabase JS client library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Add game configuration files -->
+  <script src="game-config-local.js"></script>
+  <script src="game-config.js"></script>
+  <!-- Add Google Fonts for retro font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Press Start 2P', cursive, sans-serif;
+      text-align: center;
+      padding: 20px;
+      line-height: 1.5;
+      background-color: #f0f0f0;
+    }
+    h1, h2, h3 {
+      letter-spacing: 1px;
+      margin-top: 20px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      font-size: 24px;
+    }
+    h2 {
+      font-size: 20px;
+    }
+    h3 {
+      font-size: 16px;
+    }
+    #morseDisplay span {
+      display: inline-block;
+      padding: 8px;
+      font-size: 32px;
+    }
+    input {
+      font-family: 'Press Start 2P', cursive, sans-serif;
+      font-size: 16px;
+      padding: 10px;
+    }
+    button {
+      font-family: 'Press Start 2P', cursive, sans-serif;
+      font-size: 14px;
+      padding: 10px 15px;
+      margin: 15px;
+      background-color: #222;
+      color: #fff;
+      border: 3px solid #444;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #444;
+      border-color: #666;
+    }
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    #userGuess {
+      font-size: 24px;
+      margin: 20px 0;
+      height: 40px;
+      min-width: 40px;
+      border: 2px solid #ccc;
+      border-radius: 5px;
+      display: inline-block;
+      padding: 5px 15px;
+    }
+    .instruction {
+      color: #666;
+      font-style: italic;
+      margin-top: 15px;
+      font-size: 12px;
+    }
+    #message {
+      font-size: 16px;
+      margin: 15px 0;
+      padding: 10px;
+      border-radius: 5px;
+      transition: opacity 0.3s ease;
+    }
+    .correct {
+      background-color: #dff0d8;
+      color: #3c763d;
+      border: 1px solid #d6e9c6;
+    }
+    .incorrect {
+      background-color: #f2dede;
+      color: #a94442;
+      border: 1px solid #ebccd1;
+      padding: 10px;
+      border-radius: 5px;
+      display: inline-block;
+      font-size: 14px;
+    }
+    .hidden {
+      opacity: 0;
+      display: none;
+    }
+    #gameIntro {
+      margin: 30px auto;
+      max-width: 700px;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+    #gameArea {
+      display: none;
+    }
+    #highScoreSection {
+      margin-top: 40px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .gameTypeSelector {
+      margin: 30px auto;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+    .gameTypeBtn {
+      padding: 10px 15px;
+      background-color: #000;
+      color: #fff;
+      border: 3px solid #444;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      min-width: 180px;
+    }
+    .gameTypeBtn.active {
+      background-color: #4CAF50;
+      color: white;
+      border-color: #3e8e41;
+    }
+
+    /* Score controls styling */
+    .score-controls button:hover {
+      background-color: #444;
+      border-color: #666;
+    }
+    #timer {
+      font-size: 28px;
+      font-weight: bold;
+      color: #333;
+      margin: 15px 0;
+      padding: 10px;
+      border: 3px solid #000;
+      display: inline-block;
+      min-width: 100px;
+    }
+    #timer.warning {
+      color: #f44336;
+      border-color: #f44336;
+    }
+    .gameContainer {
+      display: flex;
+      max-width: 1200px;
+      margin: 0 auto;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .mainGameArea {
+      flex: 3;
+      min-width: 300px;
+    }
+    .sideArea {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      border-left: 3px solid #000;
+      padding-left: 20px;
+      min-width: 250px;
+      text-align: left;
+    }
+    #progressDisplay {
+      margin: 0;
+      padding: 10px;
+      border: 3px solid #000;
+      border-radius: 5px;
+      min-height: 40px;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .progressItem {
+      margin: 5px;
+      padding: 8px 10px;
+      background-color: #333333; /* Darker default background */
+      color: #fff;
+      border-radius: 3px;
+      font-size: 12px;
+      display: grid;
+      grid-template-columns: 30px 1fr 30px;
+      align-items: center;
+      transition: background-color 1.5s ease;
+    }
+    .progressItem.new {
+      background-color: #4CAF50;
+    }
+    .progressItem.new.incorrect {
+      background-color: #b71c1c; /* Brighter red for new incorrect answers */
+    }
+    .progressItem.incorrect {
+      background-color: #5e2222; /* Subtle red background for incorrect answers */
+    }
+    .progressItem:not(.incorrect):not(.new) {
+      background-color: #1b5e20; /* Soft green for correct answers after highlight fades */
+    }
+    #score {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 15px;
+      border: 3px solid #000;
+      padding: 10px;
+      display: inline-block;
+    }
+    #messageSpace {
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .gameRules {
+      font-size: 12px;
+      background-color: #000;
+      color: #fff;
+      padding: 15px;
+      border-radius: 5px;
+      margin: 20px auto;
+      max-width: 650px;
+      text-align: left;
+    }
+    #gameOverModal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    .modalContent {
+      background-color: #000;
+      color: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      border: 5px solid #4CAF50;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+      width: 90%;
+      text-align: center;
+    }
+    #playerNameInput {
+      width: 100%;
+      max-width: 300px;
+      padding: 15px;
+      margin: 20px 0;
+      font-size: 14px;
+      font-family: 'Press Start 2P', cursive, sans-serif;
+      border: 3px solid #4CAF50;
+      background-color: #000;
+      color: #fff;
+      border-radius: 5px;
+    }
+    .modalButtons {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 30px;
+      flex-wrap: wrap;
+    }
+    #returnToStartBtn {
+      background-color: #333;
+      border-color: #555;
+    }
+    #returnToStartBtn:hover {
+      background-color: #555;
+      border-color: #777;
+    }
+    #gameOver {
+      display: none;
+    }
+    #cheatIndicator {
+      position: fixed;
+      top: 10px;
+      right: 100px;
+      background-color: #ff9800;
+      color: white;
+      padding: 10px;
+      font-size: 12px;
+      border-radius: 3px;
+      opacity: 0.7;
+      display: none;
+    }
+    #currentAnswer {
+      color: #ff5722;
+      font-style: italic;
+      font-size: 14px;
+      margin: 5px 0;
+      display: none;
+    }
+    .lastWrongAnswer {
+      margin: 25px 0;
+      padding: 15px;
+      background-color: #222;
+      color: #fff;
+      border-radius: 5px;
+      border: 3px solid #f44336;
+      text-align: center;
+    }
+    .lastWrongAnswer .morse {
+      font-size: 24px;
+      display: block;
+      margin: 15px 0;
+    }
+    .lastWrongAnswer .answer {
+      color: #d9534f;
+      font-weight: bold;
+      font-size: 20px;
+    }
+    #audioDebug {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      background-color: #000;
+      color: #0f0;
+      border: 2px solid #0f0;
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 12px;
+      font-family: monospace;
+      text-align: left;
+      max-width: 300px;
+      z-index: 1000;
+      display: none;
+    }
+    #soundToggle {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      background-color: #4CAF50;
+      color: white;
+      border: 3px solid #2e7d32;
+      padding: 8px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+      z-index: 1000;
+      font-family: 'Press Start 2P', cursive, sans-serif;
+    }
+    #soundToggle.muted {
+      background-color: #f44336;
+      border-color: #c62828;
+    }
+    #highScoreTable {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      font-size: 12px;
+      background-color: #000;
+      position: relative;
+      border: 3px solid #333;
+      border-radius: 5px;
+    }
+    #highScoreTable th {
+      padding: 10px;
+      text-align: center;
+      background-color: #000;
+      color: #4CAF50;
+      border-bottom: 2px solid #4CAF50;
+    }
+    #highScoreTable td {
+      padding: 8px 10px;
+      border-bottom: none;
+      position: relative;
+      background-color: #000;
+    }
+    #highScoreTable tr:nth-child(even) {
+      background-color: #000;
+    }
+    #highScoreTable tr:last-child td {
+      border-bottom: none;
+    }
+    #highScoreTable tr:hover td {
+      background-color: #000;
+    }
+    @keyframes arcadeColorCycle {
+      0% { color: #FF0000; }
+      16.6% { color: #FF00FF; }
+      33.3% { color: #00FFFF; }
+      50% { color: #FFFF00; }
+      66.6% { color: #00FF00; }
+      83.3% { color: #0000FF; }
+      100% { color: #FF0000; }
+    }
+    #highScoreTable tr:nth-child(1) td {
+      animation: arcadeColorCycle 4s infinite;
+      animation-delay: -0s;
+    }
+    #highScoreTable tr:nth-child(2) td {
+      animation: arcadeColorCycle 4s infinite;
+      animation-delay: -0.4s;
+    }
+    #highScoreTable tr:nth-child(3) td {
+      animation: arcadeColorCycle 4s infinite;
+      animation-delay: -0.8s;
+    }
+    #highScoreTable tr:nth-child(4) td {
+      animation: arcadeColorCycle 4s infinite;
+      animation-delay: -1.2s;
+    }
+    #highScoreTable tr:nth-child(5) td {
+      animation: arcadeColorCycle 4s infinite;
+      animation-delay: -1.6s;
+    }
+    #highScoreTable tr:nth-child(6) td {
+      animation: arcadeColorCycle 4s infinite;
+      animation-delay: -2.0s;
+    }
+    #highScoreTable tr:nth-child(7) td {
+      animation: arcadeColorCycle 4s infinite;
+      animation-delay: -2.4s;
+    }
+    #highScoreTable tr:nth-child(8) td {
+      animation: arcadeColorCycle 4s infinite;
+      animation-delay: -2.8s;
+    }
+    #highScoreTable tr:nth-child(9) td {
+      animation: arcadeColorCycle 4s infinite;
+      animation-delay: -3.2s;
+    }
+    #highScoreTable tr:nth-child(10) td {
+      animation: arcadeColorCycle 4s infinite;
+      animation-delay: -3.6s;
+    }
+    #highScoreTable tr td[colspan="3"] {
+      animation: none;
+      color: #4CAF50;
+    }
+    #highScoreTable:after {
+      display: none;
+    }
+    @keyframes pulsate {
+      0% { 
+        background-color: #ff0000; 
+        box-shadow: 0 0 10px #ff0000;
+        border-color: #cc0000;
+        color: white;
+      }
+      16.6% { 
+        background-color: #ff9900; 
+        box-shadow: 0 0 10px #ff9900;
+        border-color: #cc7700;
+        color: white;
+      }
+      33.3% { 
+        background-color: #ffcc00; 
+        box-shadow: 0 0 10px #ffcc00;
+        border-color: #cca300;
+        color: white;
+      }
+      50% { 
+        background-color: #33cc33; 
+        box-shadow: 0 0 10px #33cc33;
+        border-color: #29a329;
+        color: white;
+      }
+      66.6% { 
+        background-color: #3399ff; 
+        box-shadow: 0 0 10px #3399ff;
+        border-color: #0066cc;
+        color: white;
+      }
+      83.3% { 
+        background-color: #9933ff; 
+        box-shadow: 0 0 10px #9933ff;
+        border-color: #7700cc;
+        color: white;
+      }
+      100% { 
+        background-color: #ff0000; 
+        box-shadow: 0 0 10px #ff0000;
+        border-color: #cc0000;
+        color: white;
+      }
+    }
+    #startBtn {
+      animation: pulsate 4s infinite alternate;
+      font-size: 18px;
+      padding: 15px 25px;
+      border-width: 4px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    #startBtn:hover {
+      animation: none;
+      background-color: #4CAF50;
+      border-color: #3e8e41;
+      color: white;
+    }
+    #creditsButton {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background-color: #333;
+      color: white;
+      border: 2px solid #555;
+      border-radius: 4px;
+      padding: 6px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      z-index: 1000;
+      font-family: 'Press Start 2P', cursive, sans-serif;
+    }
+    #creditsContainer {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      max-width: 400px;
+      background-color: #000;
+      color: white;
+      border: 3px solid #4CAF50;
+      border-radius: 5px;
+      padding: 15px;
+      font-size: 10px;
+      text-align: left;
+      z-index: 1001;
+      display: none;
+      box-shadow: 0 0 10px rgba(0,0,0,0.6);
+      line-height: 1.6;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    #closeCredits {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 0 5px;
+      margin: 0;
+    }
+    #creditsContainer a {
+      color: #4CAF50;
+      text-decoration: none;
+    }
+    #creditsContainer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <h1>Morse Code Quiz Game</h1>
+  <div id="cheatIndicator">CHEAT MODE ACTIVE</div>
+  
+  <button id="creditsButton">Credits</button>
+  <div id="creditsContainer">
+    <button id="closeCredits">×</button>
+    <h4>Credits</h4>
+    <p>Based on the original "Morse Code Game" designed by Peter Young for the 35th Jamboree on the air</p>
+    <p>Sounds used in this game are used under a creative commons license:</p>
+    <p>8-Bit - Error by Breviceps -- <a href="https://freesound.org/s/450616/" target="_blank">https://freesound.org/s/450616/</a> -- License: Creative Commons 0</p>
+    <p>8-bit start-game by KSAplay -- <a href="https://freesound.org/s/758957/" target="_blank">https://freesound.org/s/758957/</a> -- License: Creative Commons 0</p>
+  </div>
+  
+  <div id="gameIntro">
+    <p>Test your Morse code knowledge! This game will play a Morse code sequence, and you need to identify which letter it represents.</p>
+    <p>Listen carefully to the dots and dashes, then type the corresponding letter.</p>
+    <div class="gameTypeSelector">
+      <button id="lettersOnly" class="gameTypeBtn active">Letters Only</button>
+      <button id="lettersNumbers" class="gameTypeBtn">Letters + Numbers</button>
+      <button id="lettersNumbersPunctuation" class="gameTypeBtn">Letters + Numbers + Punctuation</button>
+    </div>
+    <div class="gameRules">
+      <p><strong>Game Rules:</strong></p>
+      <ul style="text-align: left;">
+        <li>You have 60 seconds to answer as many questions as possible</li>
+        <li>The game ends when the timer reaches 0</li>
+        <li>Points per correct answer:
+          <ul>
+            <li>Letters Only: 1 point</li>
+            <li>Letters + Numbers: 2 points</li>
+            <li>Letters + Numbers + Punctuation: 3 points</li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+    <button id="startBtn" class="primary">Start Game</button>
+  </div>
+  
+  <div id="gameArea">
+    <div class="gameContainer">
+      <div class="mainGameArea">
+        <div id="timer">60</div>
+        <div id="morseDisplay"></div>
+        <div id="userGuess"></div>
+        <div id="messageSpace"></div>
+        <div id="incorrectMessage" class="hidden"></div>
+        <div id="currentAnswer"></div>
+        <p class="instruction">Just type a letter to answer. Press Space to replay.</p>
+      </div>
+      <div class="sideArea">
+        <p id="score">Score: 0</p>
+        <h3>Your Progress</h3>
+        <div id="progressDisplay"></div>
+      </div>
+    </div>
+  </div>
+  
+  <button id="soundToggle">🔊 Sound On</button>
+  <div id="audioDebug">
+    <h4>Audio Debug Info:</h4>
+    <div id="audioDebugContent"></div>
+  </div>
+  
+  <div id="gameOverModal">
+    <div class="modalContent">
+      <h2>Game Over!</h2>
+      <div id="finalScore">Final Score: 0</div>
+      <div id="scoreIdDisplay" style="margin: 10px 0; font-size: 12px; color: #888; display: none;">
+        Score ID: <span id="scoreIdValue" style="font-family: monospace; font-weight: bold;"></span>
+      </div>
+      <div id="lastWrongAnswer" class="lastWrongAnswer" style="display: none;">
+        <p>The correct answer was:</p>
+        <div class="morse" id="lastMorsePattern"></div>
+        <div class="answer" id="lastCorrectAnswer"></div>
+      </div>
+      <div id="highScoreMessage" style="margin: 15px 0; color: #4CAF50; font-weight: bold;"></div>
+      <div id="nameInputContainer" style="display: none;">
+        <p>You got a high score! Enter your name:</p>
+        <input type="text" id="playerNameInput" placeholder="Your Name" maxlength="50">
+        <div id="nameValidationMessage" style="color: #f44336; font-size: 12px; margin-top: 5px; display: none;">
+          Name must be 50 characters or less
+        </div>
+      </div>
+      <div class="modalButtons">
+        <button id="saveScoreBtn" style="display: none;">Save Score</button>
+        <button id="playAgainBtn">Play Again</button>
+        <button id="returnToStartBtn">Return to Start</button>
+      </div>
+    </div>
+  </div>
+  
+  <div id="highScoreSection">
+    <h2>High Scores</h2>
+    <table id="highScoreTable">
+      <thead>
+        <tr>
+          <th>Pos</th>
+          <th>Name</th>
+          <th>Score</th>
+        </tr>
+      </thead>
+      <tbody id="highScores">
+        <tr><td colspan="3">No high scores yet</td></tr>
+      </tbody>
+    </table>
+
+    <!-- Score controls -->
+    <div class="score-controls" style="margin-top: 20px; text-align: center;">
+      <button id="exportBtn" style="font-size: 12px; padding: 8px 15px; margin: 5px; background-color: #222; color: #fff; border: 2px solid #444; cursor: pointer;">📥 Export Scores</button>
+      <button id="syncBtn" style="font-size: 12px; padding: 8px 15px; margin: 5px; background-color: #4CAF50; color: #fff; border: 2px solid #45a049; cursor: pointer;">☁️ Sync with Cloud</button>
+    </div>
+  </div>
+  
+  <script>
+  // Morse Code Game in JavaScript (Browser-based)
+  // A modern recreation of the BASIC Morse Code quiz game with sound support
+
+  // We're using supabase for online storage of high scores. We fallback to
+  // local storage if it's unavailable and try to sync later.
+  let supabaseClient;
+  let isSupabaseAvailable = false;
+  let currentEvent = null; // Will be loaded from database or config
+
+  // Safety check: ensure gameConfig is defined (fallback if game-config.js is missing)
+  if (typeof gameConfig === 'undefined') {
+    console.warn('⚠️ game-config.js not loaded, using fallback defaults');
+    window.gameConfig = {
+      storage_mode: 'local',
+      event_id: 'local',
+      event_name: 'Local Leaderboard',
+      supabase_url: null,
+      supabase_key: null
+    };
+  }
+
+  // Generate short UUID for scores. should be unique enough...
+  function generateShortId() {
+    // Generate 6-character uppercase alphanumeric ID
+    // This gives us 36^6 = 2.1 billion possible combinations
+    return Math.random().toString(36).substr(2, 6).toUpperCase();
+  }
+
+  // Load current event from database or config
+  // Get current event - loads from database or falls back to config
+  async function loadCurrentEvent() {
+    if (currentEvent) return currentEvent; // Already loaded
+
+    const eventId = gameConfig.event_id || 'global';
+    const eventName = gameConfig.event_name || 'Leaderboard';
+
+    // Smart event name handling
+    const finalEventName = (eventId !== 'global' && eventName === 'Global Leaderboard')
+      ? eventId
+      : eventName;
+
+    currentEvent = {
+      id: eventId,
+      name: finalEventName,
+      description: null,
+      location: null,
+      start_date: null,
+      end_date: null
+    };
+
+    // Try to load from database if available
+    if (isSupabaseAvailable && supabaseClient) {
+      try {
+        const { data, error } = await supabaseClient
+          .from('events')
+          .select('*')
+          .eq('id', eventId)
+          .single();
+
+        if (!error && data) {
+          Object.assign(currentEvent, {
+            name: data.name,
+            description: data.description,
+            location: data.location,
+            start_date: data.start_date,
+            end_date: data.end_date
+          });
+          console.log(`✅ Loaded event from database: ${currentEvent.name}`);
+        }
+      } catch (e) {
+        console.log("ℹ️ Using config event (database unavailable)");
+      }
+    }
+
+    return currentEvent;
+  }
+
+  // Get current event (synchronous version)
+  function getCurrentEvent() {
+    return currentEvent || {
+      id: gameConfig.event_id || 'global',
+      name: gameConfig.event_name || 'Leaderboard'
+    };
+  }
+
+  // Update event display in UI
+  function updateEventDisplay(event) {
+    // Try to find the leaderboard title element
+    const leaderboardTitle = document.querySelector('#highScoreSection h2');
+    if (leaderboardTitle) {
+      if (event.id !== 'global') {
+        leaderboardTitle.textContent = `High Scores - ${event.name}`;
+        // Add event info if available
+        if (event.location || event.description) {
+          let eventInfo = '';
+          if (event.location) eventInfo += `📍 ${event.location}`;
+          if (event.description) eventInfo += (eventInfo ? ' | ' : '') + event.description;
+          console.log(`📅 Event: ${event.name} (${eventInfo})`);
+        }
+      }
+    }
+  }
+
+  // Initialize Supabase and configuration
+  async function initializeSupabase() {
+    try {
+      console.log("🔍 Loading configuration...");
+      console.log("   Storage mode:", gameConfig.storage_mode);
+      console.log("   Event:", gameConfig.event_id, "-", gameConfig.event_name);
+
+      // Only try Supabase if config says so
+      if (gameConfig.storage_mode === 'local') {
+        console.log("ℹ️ Local storage mode - no cloud connection needed");
+        isSupabaseAvailable = false;
+        // Still load event from config
+        await loadCurrentEvent();
+        // Ensure event exists in database (will be skipped if Supabase not available)
+        if (isSupabaseAvailable) {
+          await ensureEventExists(currentEvent);
+        }
+        updateEventDisplay(currentEvent);
+        return;
+      }
+
+      // Get Supabase credentials from config
+      const supabaseUrl = gameConfig.supabase_url;
+      const supabaseKey = gameConfig.supabase_key;
+
+      if (supabaseUrl && supabaseKey) {
+        console.log("🚀 Attempting to connect to Supabase...");
+        console.log("   Supabase URL:", supabaseUrl);
+
+        supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+        isSupabaseAvailable = true;
+
+        console.log("✅ Supabase client created successfully");
+
+        // Load current event from database
+        await loadCurrentEvent();
+
+        // Ensure the current event exists in the events table
+        await ensureEventExists(currentEvent);
+
+        // Update event display
+        updateEventDisplay(currentEvent);
+
+        // Test the connection by trying to load scores. Mainly debugging info to go to the browser log.
+        console.log("🔍 Testing Supabase connection...");
+        try {
+          const { data, error } = await supabaseClient
+            .from('high_scores')
+            .select('*')
+            .limit(1);
+
+          if (!error) {
+            console.log("✅ Supabase connection verified - high scores will be saved to cloud");
+          } else {
+            console.log("⚠️ Supabase connection test failed:", error.message);
+            console.log("⚠️ This might mean:");
+            console.log("   - The Supabase table doesn't exist yet (will be created on first save)");
+            console.log("   - Network connectivity issues");
+            console.log("   - Invalid Supabase credentials");
+            console.log("ℹ️ Will attempt to save to Supabase anyway...");
+          }
+        } catch (testError) {
+          console.log("⚠️ Supabase connection test failed:", testError.message);
+          console.log("⚠️ This might mean:");
+          console.log("   - The Supabase table doesn't exist yet (will be created on first save)");
+          console.log("   - Network connectivity issues");
+          console.log("   - Invalid Supabase credentials");
+          console.log("ℹ️ Will attempt to save to Supabase anyway...");
+        }
+      } else {
+        console.log("⚠️ No Supabase credentials in config");
+        console.log("ℹ️ To enable cloud storage, edit game-config.js and add:");
+        console.log("   supabase_url: 'https://your-project.supabase.co'");
+        console.log("   supabase_key: 'your-anon-key'");
+        console.log("ℹ️ Using local storage only");
+        isSupabaseAvailable = false;
+        // Still load event from config
+        await loadCurrentEvent();
+        // Ensure event exists in database (will be skipped if Supabase not available)
+        if (isSupabaseAvailable) {
+          await ensureEventExists(currentEvent);
+        }
+        updateEventDisplay(currentEvent);
+      }
+    } catch (error) {
+      console.error("❌ Failed to initialize Supabase:", error);
+      console.log("⚠️ Falling back to local storage");
+      isSupabaseAvailable = false;
+    }
+  }
+
+  // Define morse code mappings for different game types
+  const morseLetters = {
+    A: ".-", B: "-...", C: "-.-.", D: "-..", E: ".", F: "..-.",
+    G: "--.", H: "....", I: "..", J: ".---", K: "-.-", L: ".-..",
+    M: "--", N: "-.", O: "---", P: ".--.", Q: "--.-", R: ".-.",
+    S: "...", T: "-", U: "..-", V: "...-", W: ".--", X: "-..-",
+    Y: "-.--", Z: "--.."
+  };
+
+  const morseNumbers = {
+    "0": "-----", "1": ".----", "2": "..---", "3": "...--", "4": "....-", 
+    "5": ".....", "6": "-....", "7": "--...", "8": "---..", "9": "----."
+  };
+
+  const morsePunctuation = {
+    ".": ".-.-.-", ",": "--..--", "?": "..--..", "'": ".----.", "!": "-.-.--",
+    "/": "-..-.", "(": "-.--.", ")": "-.--.-", "&": ".-...", ":": "---...",
+    ";": "-.-.-.", "=": "-...-", "+": ".-.-.", "-": "-....-", "_": "..--.-",
+    "\"": ".-..-.", "$": "...-..-", "@": ".--.-."
+  };
+
+  // Active morse map based on game type selection
+  let activeMorseMap = morseLetters;
+  let score = 0;
+  let highScores = [];  // We'll load this from Supabase instead of localStorage
+  let currentLetter = '';
+  let gameActive = false;
+  let audioCtx = null;
+  let audioInitialized = false;
+  let audioEnabled = true;
+  let audioDebugMode = false;
+  let messageTimeout = null;
+  let timerInterval = null;
+  let timeRemaining = 60;
+  let progressItems = [];
+  let cheatMode = false;
+  let cheatKeySequence = [];
+  const CHEAT_CODE = ['c', 'h', 'e', 'a', 't'];
+
+  // Add variables to track the last wrong answer
+  let lastWrongAnswer = null;
+  let lastWrongMorse = null;
+  
+  // Add game start sound variable
+  let gameStartSound = null;
+  let gameErrorSound = null;  // Add error sound variable
+  let soundsLoaded = false;
+
+  // Function to log audio debug messages
+  function logAudioDebug(message) {
+    const debugContent = document.getElementById('audioDebugContent');
+    if (debugContent) {
+      const timestamp = new Date().toLocaleTimeString();
+      debugContent.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+      
+      // Keep only the last 10 messages
+      const messages = debugContent.querySelectorAll('div');
+      if (messages.length > 10) {
+        debugContent.removeChild(messages[0]);
+      }
+    }
+    
+    console.log(`[Audio Debug] ${message}`);
+  }
+
+  // Load high scores directly from Supabase (bypassing local checks)
+  async function loadHighScoresFromCloud() {
+    if (!isSupabaseAvailable || !supabaseClient) {
+      console.log("⚠️ Supabase not available - can't load from cloud");
+      return false;
+    }
+
+    try {
+      const currentEvent = getCurrentEvent();
+      console.log("☁️ Loading fresh scores from cloud for event:", currentEvent.id);
+
+      let query = supabaseClient
+        .from('high_scores')
+        .select('*')
+        .order('score', { ascending: false });
+
+      // Filter by event if not global
+      if (currentEvent.id !== 'global') {
+        query = query.eq('event_id', currentEvent.id);
+      }
+
+      const { data, error } = await query.limit(10);
+
+      if (!error && data) {
+        highScores = data;
+        localStorage.setItem("highScores", JSON.stringify(highScores));
+        updateScoreBoard();
+        console.log(`✅ Loaded ${data.length} scores from cloud`);
+        return true;
+      } else {
+        console.log("⚠️ Failed to load from cloud:", error?.message);
+        return false;
+      }
+    } catch (e) {
+      console.log("⚠️ Error loading from cloud:", e.message);
+      return false;
+    }
+  }
+
+  // Load a single score with event details for certificate generation
+  // Ensure event exists in events table, insert if not
+  async function ensureEventExists(event) {
+    if (!isSupabaseAvailable || !supabaseClient) return false;
+
+    try {
+      // Check if event already exists
+      const { data: existingEvent } = await supabaseClient
+        .from('events')
+        .select('id')
+        .eq('id', event.id)
+        .maybeSingle();
+
+      if (existingEvent) return true; // Event exists
+
+      // Create event if it doesn't exist
+      const { error } = await supabaseClient
+        .from('events')
+        .insert([{
+          id: event.id,
+          name: event.name || event.id,
+          description: event.description || null,
+          location: event.location || null,
+          start_date: event.start_date || null,
+          end_date: event.end_date || null,
+          is_active: true
+        }]);
+
+      if (!error) {
+        console.log(`✅ Event '${event.name}' created`);
+        return true;
+      }
+
+      console.log(`⚠️ Failed to create event:`, error.message);
+      return false;
+
+    } catch (e) {
+      console.log(`⚠️ Error ensuring event exists:`, e.message);
+      return false;
+    }
+  }
+
+  // Load high scores from Supabase with event filtering and intelligent fallback
+  async function loadHighScores() {
+    const currentEvent = getCurrentEvent();
+    const localScores = JSON.parse(localStorage.getItem("highScores") || "[]");
+
+    // Try loading from cloud first
+    if (isSupabaseAvailable && supabaseClient) {
+      try {
+        console.log("Loading high scores from Supabase for event:", currentEvent.id);
+
+        let query = supabaseClient
+          .from('high_scores')
+          .select('*')
+          .order('score', { ascending: false });
+
+        // Filter by event if not global
+        if (currentEvent.id !== 'global') {
+          query = query.eq('event_id', currentEvent.id);
+        }
+
+        const { data, error } = await query.limit(10);
+
+        if (!error && data) {
+          highScores = data;
+          localStorage.setItem("highScores", JSON.stringify(highScores));
+          console.log("✅ Loaded scores from cloud");
+          updateScoreBoard();
+          return;
+        }
+      } catch (e) {
+        console.log("⚠️ Cloud load failed, using local storage");
+      }
+    }
+
+    // Fallback to local storage
+    console.log("Using local storage");
+    highScores = localScores;
+    updateScoreBoard();
+  }
+
+  // Preload game sounds
+  function preloadSounds() {
+    try {
+      // Load the game start sound
+      gameStartSound = new Audio('8-bit-start-game.wav');
+      gameStartSound.load();
+      
+      // Load the game error sound
+      gameErrorSound = new Audio('8-bit-error.wav');
+      gameErrorSound.load();
+      
+      soundsLoaded = true;
+      logAudioDebug("Game sounds preloaded successfully");
+    } catch (e) {
+      logAudioDebug(`Error preloading sounds: ${e.message}`);
+      soundsLoaded = false;
+    }
+  }
+
+  // Play the game start sound
+  function playGameStartSound() {
+    if (!audioEnabled) return;
+    
+    try {
+      if (!soundsLoaded) {
+        preloadSounds();
+      }
+      
+      if (gameStartSound) {
+        // Reset to start and play
+        gameStartSound.currentTime = 0;
+        gameStartSound.play()
+          .catch(e => logAudioDebug(`Error playing start sound: ${e.message}`));
+        
+        logAudioDebug("Playing game start sound");
+      }
+    } catch (e) {
+      logAudioDebug(`Failed to play game start sound: ${e.message}`);
+    }
+  }
+
+  // Play the error sound when game ends with wrong answer
+  function playGameErrorSound() {
+    if (!audioEnabled) return;
+    
+    try {
+      if (!soundsLoaded) {
+        preloadSounds();
+      }
+      
+      if (gameErrorSound) {
+        // Reset to start and play
+        gameErrorSound.currentTime = 0;
+        gameErrorSound.play()
+          .catch(e => logAudioDebug(`Error playing error sound: ${e.message}`));
+        
+        logAudioDebug("Playing game error sound");
+      }
+    } catch (e) {
+      logAudioDebug(`Failed to play game error sound: ${e.message}`);
+    }
+  }
+
+  // Cryptographic random number generator
+  function getRandomLetter() {
+    const keys = Object.keys(activeMorseMap);
+    const randomBuffer = new Uint32Array(1);
+    window.crypto.getRandomValues(randomBuffer);
+    return keys[randomBuffer[0] % keys.length];
+  }
+
+  function startGame() {
+    score = 0;
+    gameActive = true;
+    clearProgressDisplay();
+    
+    // Initialize audio on game start (requires user interaction)
+    initializeAudio();
+    
+    if (!audioCtx) {
+      try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      } catch (e) {
+        console.error("Web Audio API not supported:", e);
+      }
+    }
+    
+    // Play the game start sound
+    playGameStartSound();
+    
+    document.getElementById("gameIntro").style.display = "none";
+    document.getElementById("gameArea").style.display = "block";
+    
+    // Hide high score section during gameplay
+    document.getElementById("highScoreSection").style.display = "none";
+    
+    updateScoreBoard();
+    startTimer();
+    askQuestion();
+    
+    // Update cheat display if needed
+    updateCheatDisplay();
+  }
+
+  function resetGame() {
+    // Hide modal
+    document.getElementById("gameOverModal").style.display = "none";
+    
+    // Clear any existing game
+    clearInterval(timerInterval);
+    
+    // Reset wrong answer tracking
+    lastWrongAnswer = null;
+    lastWrongMorse = null;
+    
+    // Reset score for a new game
+    score = 0;
+    
+    // Update the score display
+    updateScoreBoard();
+    
+    // Start a new game with the same settings
+    startGame();
+  }
+  
+  function returnToStart() {
+    // Hide modal
+    document.getElementById("gameOverModal").style.display = "none";
+    
+    // Clear any existing game
+    clearInterval(timerInterval);
+    
+    // Reset wrong answer tracking
+    lastWrongAnswer = null;
+    lastWrongMorse = null;
+    
+    // Show intro screen
+    document.getElementById("gameIntro").style.display = "block";
+    document.getElementById("gameArea").style.display = "none";
+    
+    // Show high score section when returning to start
+    document.getElementById("highScoreSection").style.display = "block";
+    
+    // Reload high scores from Supabase to get the latest data
+    loadHighScores();
+    
+    // Reset input field
+    document.getElementById("playerNameInput").value = "";
+  }
+
+  // Initialize when DOM is loaded
+  document.addEventListener("DOMContentLoaded", async function() {
+    // First, initialize Supabase and load config
+    console.log("🎮 Initializing Morse Game...");
+    await initializeSupabase();
+
+    // Then load high scores
+    console.log("📊 Loading high scores...");
+    await loadHighScores();
+
+    // Set up export/sync event handlers
+    document.getElementById('exportBtn').addEventListener('click', () => {
+      const scores = JSON.parse(localStorage.getItem("highScores") || "[]");
+      downloadScoresToFile(scores);
+    });
+
+    document.getElementById('syncBtn').addEventListener('click', async () => {
+      await syncManual();
+    });
+
+    // Preload sounds when the document is loaded
+    preloadSounds();
+    
+    // Add sound toggle button handler
+    document.getElementById("soundToggle").addEventListener("click", toggleSound);
+    
+    // Add credits button functionality
+    document.getElementById("creditsButton").addEventListener("click", function() {
+      document.getElementById("creditsContainer").style.display = "block";
+    });
+    
+    document.getElementById("closeCredits").addEventListener("click", function() {
+      document.getElementById("creditsContainer").style.display = "none";
+    });
+    
+    // Add keypress support for space outside game to initialize audio
+    document.addEventListener("keypress", function(e) {
+      if (e.code === "Space" && !audioInitialized) {
+        initializeAudio();
+      }
+    });
+    
+    // Add event listener for pressing Enter in the name input
+    document.getElementById("playerNameInput").addEventListener("keydown", function(event) {
+      if (event.key === "Enter") {
+        saveHighScore();
+      }
+    });
+    
+    // Add input validation for name length
+    document.getElementById("playerNameInput").addEventListener("input", function() {
+      const nameLength = this.value.trim().length;
+      const validationMessage = document.getElementById("nameValidationMessage");
+      
+      if (nameLength > 50) {
+        validationMessage.style.display = "block";
+        document.getElementById("saveScoreBtn").disabled = true;
+      } else {
+        validationMessage.style.display = "none";
+        document.getElementById("saveScoreBtn").disabled = false;
+      }
+    });
+    
+    // Add game type selector handlers
+    document.getElementById("lettersOnly").addEventListener("click", function() {
+      setGameType("letters");
+    });
+    
+    document.getElementById("lettersNumbers").addEventListener("click", function() {
+      setGameType("lettersNumbers");
+    });
+    
+    document.getElementById("lettersNumbersPunctuation").addEventListener("click", function() {
+      setGameType("lettersNumbersPunctuation");
+    });
+    
+    setGameType("letters");
+    updateScoreBoard();
+  });
+
+  function toggleAudioDebug() {
+    audioDebugMode = !audioDebugMode;
+    document.getElementById('audioDebug').style.display = audioDebugMode ? 'block' : 'none';
+    logAudioDebug("Audio debug mode " + (audioDebugMode ? "enabled" : "disabled"));
+  }
+
+  function toggleSound() {
+    audioEnabled = !audioEnabled;
+    const soundToggle = document.getElementById('soundToggle');
+    
+    if (audioEnabled) {
+      soundToggle.textContent = "🔊 Sound On";
+      soundToggle.classList.remove("muted");
+      // Try to initialize audio if it wasn't done before
+      if (!audioInitialized) {
+        initializeAudio();
+      }
+    } else {
+      soundToggle.textContent = "🔇 Sound Off";
+      soundToggle.classList.add("muted");
+    }
+    
+    logAudioDebug(`Sound ${audioEnabled ? "enabled" : "disabled"}`);
+  }
+
+  function initializeAudio() {
+    if (audioInitialized) return true;
+    
+    try {
+      // Try to create audio context with a user gesture
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AudioContext();
+      
+      // Create and play a silent sound to activate audio context
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      gainNode.gain.value = 0.01; // Nearly silent
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.001);
+      
+      audioInitialized = true;
+      logAudioDebug("Audio context initialized successfully");
+      return true;
+    } catch (e) {
+      logAudioDebug(`Audio initialization failed: ${e.message}`);
+      return false;
+    }
+  }
+  
+  function playMorseTone(symbol, delay) {
+    if (!audioEnabled) return;
+    
+    if (!audioInitialized) {
+      if (!initializeAudio()) {
+        logAudioDebug("Failed to play tone - audio not initialized");
+        return;
+      }
+    }
+    
+    try {
+      // Check if context is in suspended state (happens in some browsers)
+      if (audioCtx.state === 'suspended') {
+        logAudioDebug("Resuming suspended audio context");
+        audioCtx.resume();
+      }
+      
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
+      gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); // Explicit volume
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      const duration = symbol === '.' ? 0.1 : 0.3;
+      oscillator.start(audioCtx.currentTime + delay);
+      oscillator.stop(audioCtx.currentTime + delay + duration);
+      
+      logAudioDebug(`Playing tone: ${symbol}, delay: ${delay}, duration: ${duration}`);
+    } catch (e) {
+      logAudioDebug(`Error playing tone: ${e.message}`);
+    }
+  }
+  
+  function drawMorse(morseCode) {
+    const display = document.getElementById("morseDisplay");
+    display.innerHTML = "";
+    morseCode.split("").forEach((symbol, index) => {
+      const span = document.createElement("span");
+      span.textContent = symbol === "." ? "●" : "▬";
+      span.style.marginRight = "8px";
+      span.style.fontSize = "32px";
+      display.appendChild(span);
+      playMorseTone(symbol, index * 0.4);
+    });
+  }
+  
+  function startTimer() {
+    clearInterval(timerInterval);
+    timeRemaining = 20;
+    updateTimerDisplay();
+    
+    timerInterval = setInterval(() => {
+      timeRemaining--;
+      updateTimerDisplay();
+      
+      if (timeRemaining <= 0) {
+        clearInterval(timerInterval);
+        endGame();
+      }
+    }, 1000);
+  }
+  
+  function updateTimerDisplay() {
+    const timerElement = document.getElementById("timer");
+    timerElement.textContent = timeRemaining;
+    
+    if (timeRemaining <= 10) {
+      timerElement.classList.add("warning");
+    } else {
+      timerElement.classList.remove("warning");
+    }
+  }
+  
+  function getPointsForGameType() {
+    switch(gameType) {
+      case "lettersNumbers": return 2;
+      case "lettersNumbersPunctuation": return 3;
+      default: return 1;
+    }
+  }
+  
+  function addToProgressDisplay(letter, morse, isCorrect = true) {
+    const progressDisplay = document.getElementById("progressDisplay");
+    const item = document.createElement("div");
+    item.className = isCorrect ? "progressItem new" : "progressItem incorrect new"; 
+    
+    // Status emoji
+    const statusSpan = document.createElement("span");
+    statusSpan.className = "status";
+    statusSpan.textContent = isCorrect ? "✅" : "❌";
+    
+    // Morse pattern
+    const morseSpan = document.createElement("span");
+    morseSpan.className = "morse";
+    morseSpan.textContent = morse.replace(/\./g, "•").replace(/\-/g, "▬");
+    
+    // Letter/answer
+    const letterSpan = document.createElement("span");
+    letterSpan.className = "letter";
+    letterSpan.textContent = letter;
+    
+    // Append in the correct order for our grid layout
+    item.appendChild(statusSpan);
+    item.appendChild(morseSpan);
+    item.appendChild(letterSpan);
+    
+    progressDisplay.appendChild(item);
+    
+    // Scroll to the bottom to show new item
+    progressDisplay.scrollTop = progressDisplay.scrollHeight;
+    
+    // Remove the 'new' class after animation completes to return to softer colors
+    setTimeout(() => {
+      item.classList.remove('new');
+    }, 1500);
+    
+    progressItems.push({ letter, morse, isCorrect });
+  }
+  
+  function clearProgressDisplay() {
+    document.getElementById("progressDisplay").innerHTML = "";
+    progressItems = [];
+  }
+
+  function updateScoreBoard() {
+    document.getElementById("score").textContent = `Score: ${score}`;
+    const hsTableBody = document.getElementById("highScores");
+    
+    if (highScores.length > 0) {
+      hsTableBody.innerHTML = highScores
+        .map((s, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${s.name}</td>
+            <td>${s.score}</td>
+          </tr>
+        `).join("");
+    } else {
+      hsTableBody.innerHTML = "<tr><td colspan='3'>No high scores yet</td></tr>";
+    }
+  }
+  
+  function showMessage(text, isCorrect) {
+    if (messageTimeout) {
+      clearTimeout(messageTimeout);
+    }
+    
+    // For correct answers, don't show a message - just add to progress
+    if (isCorrect) {
+      // No message needed as the progress display change is the feedback
+      return;
+    }
+    
+    // Only show messages for incorrect answers
+    const messageDiv = document.getElementById("incorrectMessage");
+    messageDiv.textContent = text;
+    messageDiv.className = "incorrect";
+    messageDiv.style.display = "inline-block";
+    
+    messageTimeout = setTimeout(() => {
+      messageDiv.classList.add("hidden");
+      setTimeout(() => {
+        messageDiv.style.display = "none";
+      }, 300);
+    }, 2000);
+  }
+
+  function checkAnswer(answer) {
+    if (!gameActive) return;
+    
+    document.getElementById("userGuess").textContent = answer;
+    
+    if (answer === currentLetter) {
+      // Add points
+      score += getPointsForGameType();
+      
+      // Add to progress display with highlight effect
+      const morse = activeMorseMap[currentLetter];
+      addToProgressDisplay(currentLetter, morse, true); // Correct answer
+      
+      updateScoreBoard();
+      
+      // Immediately ask next question without showing "Correct" message
+      askQuestion();
+    } else {
+      // Store the wrong answer details for display
+      lastWrongAnswer = currentLetter;
+      lastWrongMorse = activeMorseMap[currentLetter];
+      
+      // Add incorrect answer to progress display
+      const morse = activeMorseMap[currentLetter];
+      addToProgressDisplay(currentLetter, morse, false); // Incorrect answer
+      
+      // Show message for incorrect answer
+      showMessage(`Wrong! The correct answer was ${currentLetter}`, false);
+      
+      // Play error sound for wrong answer
+      playGameErrorSound();
+      
+      // Ask the next question after a short delay to allow the player to see the correct answer
+      setTimeout(() => {
+        askQuestion();
+      }, 1500);
+    }
+  }
+
+  function askQuestion() {
+    currentLetter = getRandomLetter();
+    const morse = activeMorseMap[currentLetter];
+    drawMorse(morse);
+
+    document.getElementById("userGuess").textContent = "";
+    
+    // Fix: Remove reference to old message element and just update cheat display
+    updateCheatDisplay();
+  }
+  
+  function saveHighScore() {
+    // Get name from input field instead of prompt
+    const nameInput = document.getElementById("playerNameInput");
+    let name = nameInput.value.trim();
+
+    // Validate name length
+    if (name.length > 50) {
+      document.getElementById("nameValidationMessage").style.display = "block";
+      return; // Don't proceed if name is too long
+    }
+
+    // Use Anonymous if name is empty
+    name = name || "Anonymous";
+
+    // Create the enhanced high score object with UUID and event support
+    const currentEvent = getCurrentEvent();
+    const highScore = {
+      id: window.currentScoreId || generateShortId(), // Use the pre-generated ID
+      name: name,
+      score: score,
+      game_type: gameType,              // CHANGED: renamed from 'type'
+      event_id: currentEvent.id,        // NEW: Include event_id (events table stores the rest)
+      created_at: new Date().toISOString() // CHANGED: renamed from 'date'
+    };
+
+    // Save to Supabase with fallback
+    saveHighScoreWithFallback(highScore);
+
+    document.getElementById("nameInputContainer").style.display = "none";
+    document.getElementById("saveScoreBtn").style.display = "none";
+    document.getElementById("highScoreMessage").textContent = "Your score has been saved!";
+    document.getElementById("nameValidationMessage").style.display = "none"; // Hide validation message
+  }
+  
+  async function saveHighScoreWithFallback(highScore) {
+    // Try Supabase first if available
+    if (isSupabaseAvailable && supabaseClient) {
+      try {
+        console.log("💾 Attempting to save high score to Supabase...");
+
+        // Ensure the event exists in the events table
+        await ensureEventExists(getCurrentEvent());
+
+        const { error } = await supabaseClient
+          .from('high_scores')
+          .insert([{
+            id: highScore.id,
+            name: highScore.name,
+            score: highScore.score,
+            game_type: highScore.game_type,
+            event_id: highScore.event_id,
+            created_at: highScore.created_at
+          }]);
+
+        if (!error) {
+          console.log(`✅ Score saved to cloud`);
+        } else {
+          console.log("⚠️ Cloud save failed - using local storage");
+        }
+      } catch (e) {
+        console.log("⚠️ Cloud save failed - using local storage");
+      }
+    } else {
+      console.log("ℹ️ Supabase not available - using local storage");
+    }
+
+    // Always save to localStorage as backup
+    saveHighScoreLocally(highScore);
+  }
+
+  // Manual sync button handler
+  async function syncManual() {
+    if (!isSupabaseAvailable) {
+      alert("No cloud connection available. Please check your internet connection.");
+      return;
+    }
+
+    const localScores = JSON.parse(localStorage.getItem("highScores") || "[]");
+
+    if (localScores.length === 0) {
+      alert("No local scores to sync. Try downloading fresh scores from cloud!");
+      await loadHighScoresFromCloud();
+      return;
+    }
+
+    console.log(`🔄 Syncing ${localScores.length} local scores with cloud...`);
+
+    // Ensure current event exists in database
+    await ensureEventExists(getCurrentEvent());
+
+    let uploaded = 0;
+    let skipped = 0;
+
+    for (const score of localScores) {
+      try {
+        // Check if score already exists in cloud
+        const { data: existing } = await supabaseClient
+          .from('high_scores')
+          .select('id')
+          .eq('id', score.id)
+          .single();
+
+        if (existing) {
+          skipped++;
+          continue;
+        }
+
+        // Upload score if it doesn't exist
+        const { error } = await supabaseClient
+          .from('high_scores')
+          .insert([{
+            id: score.id,
+            name: score.name,
+            score: score.score,
+            game_type: score.game_type,
+            event_id: score.event_id,
+            created_at: score.created_at
+          }]);
+
+        if (!error) {
+          uploaded++;
+        }
+      } catch (e) {
+        console.log(`⚠️ Failed to sync score ${score.id}`);
+      }
+    }
+
+    // Reload fresh scores from cloud
+    await loadHighScoresFromCloud();
+
+    if (uploaded > 0) {
+      alert(`Sync complete: ${uploaded} uploaded, ${skipped} already in cloud`);
+    } else {
+      alert(`All scores already in cloud! Leaderboard updated.`);
+    }
+  }
+
+  function saveHighScoreLocally(highScore) {
+    // Simple localStorage approach
+    let localScores = JSON.parse(localStorage.getItem("highScores") || "[]");
+
+    // Add new score
+    localScores.push(highScore);
+
+    // Sort and keep top 10
+    localScores.sort((a, b) => b.score - a.score);
+    localScores = localScores.slice(0, 10);
+
+    // Save to localStorage
+    localStorage.setItem("highScores", JSON.stringify(localScores));
+    highScores = localScores;
+
+    console.log("✅ Score saved to local storage");
+    updateScoreBoard();
+  }
+
+  // Enhanced local storage with file download
+  function downloadScoresToFile(scores) {
+    const dataStr = JSON.stringify(scores, null, 2);
+    const dataBlob = new Blob([dataStr], {type: "application/json"});
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `morse-highscores-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function endGame() {
+    gameActive = false;
+    clearInterval(timerInterval);
+
+    // Play error sound when game ends (timer reaches 0)
+    playGameErrorSound();
+
+    // Generate and display score ID immediately
+    const currentScoreId = generateShortId();
+    document.getElementById("scoreIdValue").textContent = currentScoreId;
+    document.getElementById("scoreIdDisplay").style.display = "block";
+
+    // Display final score
+    document.getElementById("finalScore").textContent = `Final Score: ${score}`;
+
+    // We don't need to show the last wrong answer since game doesn't end on wrong answers anymore
+    document.getElementById("lastWrongAnswer").style.display = "none";
+
+    // Check for high score and show appropriate UI
+    const isHighScore = score > 0 && (highScores.length < 10 || score > highScores[highScores.length-1].score);
+
+    if (isHighScore) {
+      document.getElementById("nameInputContainer").style.display = "block";
+      document.getElementById("saveScoreBtn").style.display = "inline-block";
+      document.getElementById("highScoreMessage").textContent = "New High Score!";
+
+      // Focus the input field
+      setTimeout(() => {
+        document.getElementById("playerNameInput").focus();
+      }, 300);
+    } else {
+      document.getElementById("nameInputContainer").style.display = "none";
+      document.getElementById("saveScoreBtn").style.display = "none";
+      document.getElementById("highScoreMessage").textContent = "";
+    }
+
+    // Display modal
+    document.getElementById("gameOverModal").style.display = "flex";
+
+    updateScoreBoard();
+
+    // Store the current score ID for use when saving
+    window.currentScoreId = currentScoreId;
+  }
+
+  function toggleCheatMode() {
+    cheatMode = !cheatMode;
+    
+    // Show or hide cheat indicator
+    document.getElementById('cheatIndicator').style.display = cheatMode ? 'block' : 'none';
+    
+    // If cheat mode is now active, show the current answer
+    updateCheatDisplay();
+  }
+  
+  function updateCheatDisplay() {
+    const answerDisplay = document.getElementById('currentAnswer');
+    if (cheatMode && gameActive) {
+      answerDisplay.style.display = 'block';
+      answerDisplay.textContent = `Answer: ${currentLetter}`;
+    } else {
+      answerDisplay.style.display = 'none';
+    }
+  }
+
+  function setGameType(type) {
+    gameType = type;
+    
+    switch(type) {
+      case "letters":
+        activeMorseMap = {...morseLetters};
+        break;
+      case "lettersNumbers":
+        activeMorseMap = {...morseLetters, ...morseNumbers};
+        break;
+      case "lettersNumbersPunctuation":
+        activeMorseMap = {...morseLetters, ...morseNumbers, ...morsePunctuation};
+        break;
+    }
+    
+    document.querySelectorAll('.gameTypeBtn').forEach(btn => {
+      btn.classList.remove('active');
+    });
+    
+    if (type === "letters") {
+      document.getElementById("lettersOnly").classList.add('active');
+    } else {
+      document.getElementById(type).classList.add('active');
+    }
+    
+    updateScoreBoard();
+  }
+
+  document.getElementById("startBtn").addEventListener("click", startGame);
+  document.getElementById("playAgainBtn").addEventListener("click", resetGame);
+  document.getElementById("returnToStartBtn").addEventListener("click", returnToStart);
+  document.getElementById("saveScoreBtn").addEventListener("click", saveHighScore);
+
+  document.addEventListener("keydown", function(event) {
+    // Track cheat code
+    if (!event.ctrlKey && !event.altKey) {
+      cheatKeySequence.push(event.key.toLowerCase());
+      if (cheatKeySequence.length > CHEAT_CODE.length) {
+        cheatKeySequence.shift(); // Remove oldest key
+      }
+      
+      // Check if cheat code has been entered
+      if (cheatKeySequence.join('') === CHEAT_CODE.join('')) {
+        toggleCheatMode();
+        cheatKeySequence = []; // Reset sequence
+        return;
+      }
+    }
+    
+    // Add debug mode toggle with Alt+D
+    if (event.key.toLowerCase() === 'd' && event.altKey) {
+      toggleAudioDebug();
+      return;
+    }
+    
+    if (!gameActive) return;
+    
+    const key = event.key.toUpperCase();
+    
+    if (activeMorseMap.hasOwnProperty(key)) {
+      document.getElementById("userGuess").textContent = key;
+      checkAnswer(key);
+    } else if (event.key === " ") {
+      const morse = activeMorseMap[currentLetter];
+      drawMorse(morse);
+      event.preventDefault();
+    } else if (event.key === "Escape") {
+      endGame();
+    }
+  });
+  </script>
+</body>
+</html>

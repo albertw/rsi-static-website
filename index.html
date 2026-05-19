@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radio Scouting Ireland - Radio Scouting Ireland</title>
+    <meta name="description" content="Radio Scouting Ireland - Promoting Amateur Radio, STEM, and STEAM activities in scouting across Ireland">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        rsi: {
+                            green: '#1a5d1a',
+                            light: '#2d8b2d',
+                            accent: '#f59e0b',
+                            dark: '#1e293b',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Roboto', 'sans-serif'],
+                        serif: ['Aptos', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Header will be automatically inserted by header-footer.js -->
+    <script src="header-footer.js"></script>
+
+    <!-- Hero Section -->
+    <section class="relative h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat" style="background-image: url('images/2Our-Mission-min-1024x762-1.jpg');">
+        <!-- Dark overlay for better text readability -->
+        <div class="absolute inset-0 bg-black/30"></div>
+
+        <!-- Content -->
+        <div class="relative z-10 container mx-auto px-4 text-center">
+            <h1 class="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-4 drop-shadow-lg">Radio Scouting Ireland</h1>
+            <h2 class="text-2xl md:text-4xl lg:text-5xl font-light text-white mb-8 drop-shadow-lg">Endless Potential</h2>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="https://www.facebook.com/radioscoutingireland" target="_blank" rel="noopener" class="bg-white text-rsi-green px-8 py-3 rounded-lg font-semibold hover:bg-rsi-accent hover:text-white transition-all duration-300 shadow-lg">
+                    Visit our Facebook
+                </a>
+                <a href="https://www.idonate.ie/radioscoutingireland" target="_blank" rel="noopener" class="bg-rsi-accent text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-rsi-accent transition-all duration-300 shadow-lg">
+                    Donate to RSI
+                </a>
+            </div>
+        </div>
+
+        <!-- Scroll indicator -->
+        <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+            </svg>
+        </div>
+    </section>
+
+    <!-- Aims Section -->
+    <section class="py-16 bg-white">
+        <div class="container mx-auto px-4 max-w-4xl">
+            <h2 class="text-3xl md:text-4xl font-bold text-center text-rsi-green mb-12">Our Aims</h2>
+            <ol class="list-decimal list-inside space-y-6 text-lg text-gray-700">
+                <li class="text-left">Promote and support Amateur Radio, science, technology, engineering, arts and mathematics (STEAM) activities in a safe, fun and interesting way across the scout groups, guide groups and youth groups across the whole of Ireland, regardless of culture, gender or neurotype.</li>
+                <li class="text-left">Promote and support participation in the annual global JOTA-JOTI scout and guide event and YOTA camp</li>
+                <li class="text-left">Provide a focal point for amateur radio equipment donations and distribute on loan or on a permanent basis such donations to scout groups who wish to take part in amateur radio, STEM and radio scouting activities</li>
+                <li class="text-left">Contribute to IRTS, Scouting & ComReg consultations in order to help promote Radio Scouting activities</li>
+            </ol>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section class="py-16 bg-gray-100">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Service 1 -->
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                    <img src="images/Service-1-min-scaled.jpg" alt="JOTA-JOTI" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold text-rsi-green mb-4">JOTA-JOTI</h3>
+                        <p class="text-gray-700 mb-4">Jamboree on the Air-Jamboree on the Internet is the largest annual scouting and guiding event in the world!</p>
+                        <p class="text-gray-700 mb-4">Up to a million or more scouts and guides around the world take to the airwaves and internet for a virtual Jamboree of culture and exploration.</p>
+                        <p class="text-gray-700 mb-4">It all started in 1957 when a group of Scout Leaders who were also licensed radio amateurs, had the idea following their experience with a large station at the 9th World Scout Jamboree in Sutton Park. Every year since over a million scouts take to the airwaves and in more recent years internet!</p>
+                    </div>
+                </div>
+
+                <!-- Service 2 -->
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                    <img src="images/Service-2-min.jpg" alt="Badges & Skill development" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold text-rsi-green mb-4">Badges & Skill development</h3>
+                        <p class="text-gray-700 mb-4">We have developed a comprehensive graduated 9 stage Radio Scouting skills program suitable for the youngest to the oldest along with badges for each stage as well as special interest badges and resources to help scouters implement radio and technology related programs.</p>
+                        <p class="text-gray-700 mb-4">Details on the program are found on our <a href="resources.html" class="text-rsi-light hover:text-rsi-green font-medium">resources page here</a>.</p>
+                        <p class="text-gray-700 mb-4">We highly recommend that scouters and scouts who are interested in ham radio & radio scouting join the Irish Radio Transmitters Society and the National Shortwave Listeners club and pursue training to get a license.</p>
+                    </div>
+                </div>
+
+                <!-- Service 3 -->
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                    <img src="images/Service-3-min.jpg" alt="Training & Facilitation" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold text-rsi-green mb-4">Training & Facilitation</h3>
+                        <p class="text-gray-700 mb-4">RSI provides a one day training course for scout and guide leaders to enable them to bring scouts and guides through Stage 1 and Stage 2 of the Radio Scouting skills program. We also provide a one day stage 3 leader training course. Working towards Level 4 and up involve self study and external courses run by the National Shortwave Listeners club, OARC, Essex Ham among others.</p>
+                        <p class="text-gray-700 mb-4">RSI has the capacity to support a limited number of national camps and national and international Jamborees with fun bases and IST.</p>
+                        <p class="text-gray-700 mb-4">We can also facilitate connecting scout and guide groups with a local amateur radio clubs to facilitate an activity night or participation in JOTA-JOTI.</p>
+                        <p class="text-gray-700 mb-4">Check out the <a href="resources.html" class="text-rsi-light hover:text-rsi-green font-medium">resources page</a> for ideas!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl md:text-4xl font-bold text-center text-rsi-green mb-12">About us</h2>
+            <div class="max-w-4xl mx-auto">
+                <p class="text-lg text-gray-700 mb-6">We are a group of Scouters and Amateur radio enthusiasts who aim to support scout and guide leaders to bring the highest standards of Amateur Radio, Science, Technology, Engineering and Mathematics (STEM) activities in a fun and interesting way to the scout groups, guide groups and youth groups of Ireland and Europe in a safe and fun environment for youth members and leaders.</p>
+                <ul class="space-y-3 text-gray-700">
+                    <li>• Here is our <a href="resources/Scouting-Ireland-Constitution-19042024-V2.0.pdf" class="text-rsi-light hover:text-rsi-green font-medium">constitution</a></li>
+                    <li>• Here is our membership <a href="resources/GV.SD_.05.-RSI-Membership-and-Garda-Vetting-Policy-010423.pdf" class="text-rsi-light hover:text-rsi-green font-medium">Garda vetting & safeguarding policy</a></li>
+                    <li>• If you would like to join and or support us you can <a href="https://docs.google.com/forms/d/e/1FAIpQLSceXBfv0hPOMQ4XW0rfJofmr6U6VjANKD9dITMk-oNKpYozAA/viewform" class="text-rsi-light hover:text-rsi-green font-medium">apply here</a></li>
+                    <li>• If you would like to donate radio equipment this is our <a href="resources/RSI-Donation-Agreement-V1.0-021121-1.pdf" class="text-rsi-light hover:text-rsi-green font-medium">standard agreement</a></li>
+                    <li>• If you like what we are doing and would like to donate funding we have an <a href="https://www.idonate.ie/radioscoutingireland" class="text-rsi-light hover:text-rsi-green font-medium">iDonate page here</a></li>
+                    <li>• If you are a scout or guide group and would like to borrow <a href="resources/RSI-Loan-Agreement-V1.0-270922.pdf" class="text-rsi-light hover:text-rsi-green font-medium">equipment this is the form to do so</a></li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact CTA -->
+    <section class="py-16 bg-gradient-to-r from-rsi-green to-rsi-light">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="text-3xl md:text-4xl font-bold text-white mb-6">Talk to us</h2>
+            <p class="text-xl text-white mb-8">Have any questions? Drop over to our facebook page and say Hello!</p>
+            <a href="https://www.facebook.com/radioscoutingireland" target="_blank" rel="noopener" class="bg-white text-rsi-green px-8 py-3 rounded-lg font-semibold hover:bg-rsi-accent hover:text-white transition-all duration-300 inline-block">
+                Visit our Facebook Page
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer will be automatically inserted by header-footer.js -->
+</body>
+</html>
