@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <nav id="nav-menu" class="hidden md:flex space-x-8">
                     <a href="index.html" class="text-white hover:text-rsi-accent transition-colors duration-300 font-medium">Home</a>
                     <a href="resources.html" class="text-white hover:text-rsi-accent transition-colors duration-300 font-medium">Resources</a>
+                    <a href="morsegame.html" class="text-white hover:text-rsi-accent transition-colors duration-300 font-medium">Morse Game</a>
                 </nav>
             </div>
 
@@ -29,6 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <nav id="mobile-nav" class="hidden md:hidden mt-4 pb-4">
                 <a href="index.html" class="block py-2 text-white hover:text-rsi-accent transition-colors duration-300">Home</a>
                 <a href="resources.html" class="block py-2 text-white hover:text-rsi-accent transition-colors duration-300">Resources</a>
+                <a href="morsegame.html" class="block py-2 text-white hover:text-rsi-accent transition-colors duration-300">Morse Game</a>
             </nav>
         </div>
     </header>
