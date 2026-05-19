@@ -15,6 +15,9 @@
   <link rel="manifest" href="site.webmanifest">
   <!-- Add Supabase JS client library -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Add game configuration files -->
+  <script src="game-config-local.js"></script>
+  <script src="game-config.js"></script>
   <!-- Add Google Fonts for retro font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -146,6 +149,12 @@
       background-color: #4CAF50;
       color: white;
       border-color: #3e8e41;
+    }
+
+    /* Score controls styling */
+    .score-controls button:hover {
+      background-color: #444;
+      border-color: #666;
     }
     #timer {
       font-size: 28px;
@@ -635,6 +644,9 @@
     <div class="modalContent">
       <h2>Game Over!</h2>
       <div id="finalScore">Final Score: 0</div>
+      <div id="scoreIdDisplay" style="margin: 10px 0; font-size: 12px; color: #888; display: none;">
+        Score ID: <span id="scoreIdValue" style="font-family: monospace; font-weight: bold;"></span>
+      </div>
       <div id="lastWrongAnswer" class="lastWrongAnswer" style="display: none;">
         <p>The correct answer was:</p>
         <div class="morse" id="lastMorsePattern"></div>
@@ -670,35 +682,207 @@
         <tr><td colspan="3">No high scores yet</td></tr>
       </tbody>
     </table>
+
+    <!-- Score controls -->
+    <div class="score-controls" style="margin-top: 20px; text-align: center;">
+      <button id="exportBtn" style="font-size: 12px; padding: 8px 15px; margin: 5px; background-color: #222; color: #fff; border: 2px solid #444; cursor: pointer;">📥 Export Scores</button>
+      <button id="syncBtn" style="font-size: 12px; padding: 8px 15px; margin: 5px; background-color: #4CAF50; color: #fff; border: 2px solid #45a049; cursor: pointer;">☁️ Sync with Cloud</button>
+    </div>
   </div>
   
   <script>
   // Morse Code Game in JavaScript (Browser-based)
   // A modern recreation of the BASIC Morse Code quiz game with sound support
 
-  // Supabase Configuration - Load from Netlify environment variables with proper fallback
-  const SUPABASE_URL = (window.ENV && window.ENV.VITE_SUPABASE_URL) || 
-                       window.VITE_SUPABASE_URL ||
-                       window.SUPABASE_URL;
-  
-  const SUPABASE_KEY = (window.ENV && window.ENV.VITE_SUPABASE_ANON_KEY) || 
-                       window.VITE_SUPABASE_ANON_KEY || 
-                       window.SUPABASE_ANON_KEY;
-  
+  // We're using supabase for online storage of high scores. We fallback to
+  // local storage if it's unavailable and try to sync later.
   let supabaseClient;
-  
-  // Initialize Supabase client if environment variables are available
-  try {
-    if (!SUPABASE_URL || !SUPABASE_KEY) {
-      throw new Error("Supabase environment variables are not set");
+  let isSupabaseAvailable = false;
+  let currentEvent = null; // Will be loaded from database or config
+
+  // Safety check: ensure gameConfig is defined (fallback if game-config.js is missing)
+  if (typeof gameConfig === 'undefined') {
+    console.warn('⚠️ game-config.js not loaded, using fallback defaults');
+    window.gameConfig = {
+      storage_mode: 'local',
+      event_id: 'local',
+      event_name: 'Local Leaderboard',
+      supabase_url: null,
+      supabase_key: null
+    };
+  }
+
+  // Generate short UUID for scores. should be unique enough...
+  function generateShortId() {
+    // Generate 6-character uppercase alphanumeric ID
+    // This gives us 36^6 = 2.1 billion possible combinations
+    return Math.random().toString(36).substr(2, 6).toUpperCase();
+  }
+
+  // Load current event from database or config
+  // Get current event - loads from database or falls back to config
+  async function loadCurrentEvent() {
+    if (currentEvent) return currentEvent; // Already loaded
+
+    const eventId = gameConfig.event_id || 'global';
+    const eventName = gameConfig.event_name || 'Leaderboard';
+
+    // Smart event name handling
+    const finalEventName = (eventId !== 'global' && eventName === 'Global Leaderboard')
+      ? eventId
+      : eventName;
+
+    currentEvent = {
+      id: eventId,
+      name: finalEventName,
+      description: null,
+      location: null,
+      start_date: null,
+      end_date: null
+    };
+
+    // Try to load from database if available
+    if (isSupabaseAvailable && supabaseClient) {
+      try {
+        const { data, error } = await supabaseClient
+          .from('events')
+          .select('*')
+          .eq('id', eventId)
+          .single();
+
+        if (!error && data) {
+          Object.assign(currentEvent, {
+            name: data.name,
+            description: data.description,
+            location: data.location,
+            start_date: data.start_date,
+            end_date: data.end_date
+          });
+          console.log(`✅ Loaded event from database: ${currentEvent.name}`);
+        }
+      } catch (e) {
+        console.log("ℹ️ Using config event (database unavailable)");
+      }
     }
-    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    console.log("Supabase client initialized successfully");
-  } catch (error) {
-    console.error("Failed to initialize Supabase client:", error);
-    // Display a user-friendly error message that doesn't block the game
-    console.warn("High scores will not be available");
-    // Don't use alert here as it's disruptive to the game experience
+
+    return currentEvent;
+  }
+
+  // Get current event (synchronous version)
+  function getCurrentEvent() {
+    return currentEvent || {
+      id: gameConfig.event_id || 'global',
+      name: gameConfig.event_name || 'Leaderboard'
+    };
+  }
+
+  // Update event display in UI
+  function updateEventDisplay(event) {
+    // Try to find the leaderboard title element
+    const leaderboardTitle = document.querySelector('#highScoreSection h2');
+    if (leaderboardTitle) {
+      if (event.id !== 'global') {
+        leaderboardTitle.textContent = `High Scores - ${event.name}`;
+        // Add event info if available
+        if (event.location || event.description) {
+          let eventInfo = '';
+          if (event.location) eventInfo += `📍 ${event.location}`;
+          if (event.description) eventInfo += (eventInfo ? ' | ' : '') + event.description;
+          console.log(`📅 Event: ${event.name} (${eventInfo})`);
+        }
+      }
+    }
+  }
+
+  // Initialize Supabase and configuration
+  async function initializeSupabase() {
+    try {
+      console.log("🔍 Loading configuration...");
+      console.log("   Storage mode:", gameConfig.storage_mode);
+      console.log("   Event:", gameConfig.event_id, "-", gameConfig.event_name);
+
+      // Only try Supabase if config says so
+      if (gameConfig.storage_mode === 'local') {
+        console.log("ℹ️ Local storage mode - no cloud connection needed");
+        isSupabaseAvailable = false;
+        // Still load event from config
+        await loadCurrentEvent();
+        // Ensure event exists in database (will be skipped if Supabase not available)
+        if (isSupabaseAvailable) {
+          await ensureEventExists(currentEvent);
+        }
+        updateEventDisplay(currentEvent);
+        return;
+      }
+
+      // Get Supabase credentials from config
+      const supabaseUrl = gameConfig.supabase_url;
+      const supabaseKey = gameConfig.supabase_key;
+
+      if (supabaseUrl && supabaseKey) {
+        console.log("🚀 Attempting to connect to Supabase...");
+        console.log("   Supabase URL:", supabaseUrl);
+
+        supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+        isSupabaseAvailable = true;
+
+        console.log("✅ Supabase client created successfully");
+
+        // Load current event from database
+        await loadCurrentEvent();
+
+        // Ensure the current event exists in the events table
+        await ensureEventExists(currentEvent);
+
+        // Update event display
+        updateEventDisplay(currentEvent);
+
+        // Test the connection by trying to load scores. Mainly debugging info to go to the browser log.
+        console.log("🔍 Testing Supabase connection...");
+        try {
+          const { data, error } = await supabaseClient
+            .from('high_scores')
+            .select('*')
+            .limit(1);
+
+          if (!error) {
+            console.log("✅ Supabase connection verified - high scores will be saved to cloud");
+          } else {
+            console.log("⚠️ Supabase connection test failed:", error.message);
+            console.log("⚠️ This might mean:");
+            console.log("   - The Supabase table doesn't exist yet (will be created on first save)");
+            console.log("   - Network connectivity issues");
+            console.log("   - Invalid Supabase credentials");
+            console.log("ℹ️ Will attempt to save to Supabase anyway...");
+          }
+        } catch (testError) {
+          console.log("⚠️ Supabase connection test failed:", testError.message);
+          console.log("⚠️ This might mean:");
+          console.log("   - The Supabase table doesn't exist yet (will be created on first save)");
+          console.log("   - Network connectivity issues");
+          console.log("   - Invalid Supabase credentials");
+          console.log("ℹ️ Will attempt to save to Supabase anyway...");
+        }
+      } else {
+        console.log("⚠️ No Supabase credentials in config");
+        console.log("ℹ️ To enable cloud storage, edit game-config.js and add:");
+        console.log("   supabase_url: 'https://your-project.supabase.co'");
+        console.log("   supabase_key: 'your-anon-key'");
+        console.log("ℹ️ Using local storage only");
+        isSupabaseAvailable = false;
+        // Still load event from config
+        await loadCurrentEvent();
+        // Ensure event exists in database (will be skipped if Supabase not available)
+        if (isSupabaseAvailable) {
+          await ensureEventExists(currentEvent);
+        }
+        updateEventDisplay(currentEvent);
+      }
+    } catch (error) {
+      console.error("❌ Failed to initialize Supabase:", error);
+      console.log("⚠️ Falling back to local storage");
+      isSupabaseAvailable = false;
+    }
   }
 
   // Define morse code mappings for different game types
@@ -766,30 +950,124 @@
     console.log(`[Audio Debug] ${message}`);
   }
 
-  // Load high scores from Supabase
-  async function loadHighScores() {
+  // Load high scores directly from Supabase (bypassing local checks)
+  async function loadHighScoresFromCloud() {
+    if (!isSupabaseAvailable || !supabaseClient) {
+      console.log("⚠️ Supabase not available - can't load from cloud");
+      return false;
+    }
+
     try {
-      const { data, error } = await supabaseClient
+      const currentEvent = getCurrentEvent();
+      console.log("☁️ Loading fresh scores from cloud for event:", currentEvent.id);
+
+      let query = supabaseClient
         .from('high_scores')
         .select('*')
-        .order('score', { ascending: false })
-        .limit(10);
-      
-      if (error) {
-        console.error('Error loading high scores:', error);
-        // Fall back to localStorage if database fails
-        highScores = JSON.parse(localStorage.getItem("highScores") || "[]");
-      } else {
-        highScores = data || [];
-        // Keep a local copy as backup
+        .order('score', { ascending: false });
+
+      // Filter by event if not global
+      if (currentEvent.id !== 'global') {
+        query = query.eq('event_id', currentEvent.id);
+      }
+
+      const { data, error } = await query.limit(10);
+
+      if (!error && data) {
+        highScores = data;
         localStorage.setItem("highScores", JSON.stringify(highScores));
+        updateScoreBoard();
+        console.log(`✅ Loaded ${data.length} scores from cloud`);
+        return true;
+      } else {
+        console.log("⚠️ Failed to load from cloud:", error?.message);
+        return false;
       }
     } catch (e) {
-      console.error('Failed to load high scores:', e);
-      // Fall back to localStorage
-      highScores = JSON.parse(localStorage.getItem("highScores") || "[]");
+      console.log("⚠️ Error loading from cloud:", e.message);
+      return false;
     }
-    
+  }
+
+  // Load a single score with event details for certificate generation
+  // Ensure event exists in events table, insert if not
+  async function ensureEventExists(event) {
+    if (!isSupabaseAvailable || !supabaseClient) return false;
+
+    try {
+      // Check if event already exists
+      const { data: existingEvent } = await supabaseClient
+        .from('events')
+        .select('id')
+        .eq('id', event.id)
+        .maybeSingle();
+
+      if (existingEvent) return true; // Event exists
+
+      // Create event if it doesn't exist
+      const { error } = await supabaseClient
+        .from('events')
+        .insert([{
+          id: event.id,
+          name: event.name || event.id,
+          description: event.description || null,
+          location: event.location || null,
+          start_date: event.start_date || null,
+          end_date: event.end_date || null,
+          is_active: true
+        }]);
+
+      if (!error) {
+        console.log(`✅ Event '${event.name}' created`);
+        return true;
+      }
+
+      console.log(`⚠️ Failed to create event:`, error.message);
+      return false;
+
+    } catch (e) {
+      console.log(`⚠️ Error ensuring event exists:`, e.message);
+      return false;
+    }
+  }
+
+  // Load high scores from Supabase with event filtering and intelligent fallback
+  async function loadHighScores() {
+    const currentEvent = getCurrentEvent();
+    const localScores = JSON.parse(localStorage.getItem("highScores") || "[]");
+
+    // Try loading from cloud first
+    if (isSupabaseAvailable && supabaseClient) {
+      try {
+        console.log("Loading high scores from Supabase for event:", currentEvent.id);
+
+        let query = supabaseClient
+          .from('high_scores')
+          .select('*')
+          .order('score', { ascending: false });
+
+        // Filter by event if not global
+        if (currentEvent.id !== 'global') {
+          query = query.eq('event_id', currentEvent.id);
+        }
+
+        const { data, error } = await query.limit(10);
+
+        if (!error && data) {
+          highScores = data;
+          localStorage.setItem("highScores", JSON.stringify(highScores));
+          console.log("✅ Loaded scores from cloud");
+          updateScoreBoard();
+          return;
+        }
+      } catch (e) {
+        console.log("⚠️ Cloud load failed, using local storage");
+      }
+    }
+
+    // Fallback to local storage
+    console.log("Using local storage");
+    highScores = localScores;
     updateScoreBoard();
   }
 
@@ -856,9 +1134,12 @@
     }
   }
 
+  // Cryptographic random number generator
   function getRandomLetter() {
     const keys = Object.keys(activeMorseMap);
-    return keys[Math.floor(Math.random() * keys.length)];
+    const randomBuffer = new Uint32Array(1);
+    window.crypto.getRandomValues(randomBuffer);
+    return keys[randomBuffer[0] % keys.length];
   }
 
   function startGame() {
@@ -940,11 +1221,26 @@
     document.getElementById("playerNameInput").value = "";
   }
 
-  // Replace the DOMContentLoaded function to load scores from Supabase
-  document.addEventListener("DOMContentLoaded", function() {
-    // Load high scores from Supabase
-    loadHighScores();
-    
+  // Initialize when DOM is loaded
+  document.addEventListener("DOMContentLoaded", async function() {
+    // First, initialize Supabase and load config
+    console.log("🎮 Initializing Morse Game...");
+    await initializeSupabase();
+
+    // Then load high scores
+    console.log("📊 Loading high scores...");
+    await loadHighScores();
+
+    // Set up export/sync event handlers
+    document.getElementById('exportBtn').addEventListener('click', () => {
+      const scores = JSON.parse(localStorage.getItem("highScores") || "[]");
+      downloadScoresToFile(scores);
+    });
+
+    document.getElementById('syncBtn').addEventListener('click', async () => {
+      await syncManual();
+    });
+
     // Preload sounds when the document is loaded
     preloadSounds();
     
@@ -1202,15 +1498,6 @@
     }
   }
   
-  function getGameTypeName(type) {
-    switch(type) {
-      case "letters": return "Letters";
-      case "lettersNumbers": return "Letters + Numbers";
-      case "lettersNumbersPunctuation": return "Letters + Numbers + Punctuation";
-      default: return "Unknown";
-    }
-  }
-  
   function showMessage(text, isCorrect) {
     if (messageTimeout) {
       clearTimeout(messageTimeout);
@@ -1290,93 +1577,196 @@
     // Get name from input field instead of prompt
     const nameInput = document.getElementById("playerNameInput");
     let name = nameInput.value.trim();
-    
+
     // Validate name length
     if (name.length > 50) {
       document.getElementById("nameValidationMessage").style.display = "block";
       return; // Don't proceed if name is too long
     }
-    
+
     // Use Anonymous if name is empty
     name = name || "Anonymous";
-    
-    // Create the high score object
-    const highScore = { 
-      name: name, 
-      score: score, 
-      type: gameType,
-      date: new Date().toISOString()
+
+    // Create the enhanced high score object with UUID and event support
+    const currentEvent = getCurrentEvent();
+    const highScore = {
+      id: window.currentScoreId || generateShortId(), // Use the pre-generated ID
+      name: name,
+      score: score,
+      game_type: gameType,              // CHANGED: renamed from 'type'
+      event_id: currentEvent.id,        // NEW: Include event_id (events table stores the rest)
+      created_at: new Date().toISOString() // CHANGED: renamed from 'date'
     };
-    
-    // Save to Supabase
-    saveHighScoreToSupabase(highScore);
-    
-    // Update UI
+
+    // Save to Supabase with fallback
+    saveHighScoreWithFallback(highScore);
+
     document.getElementById("nameInputContainer").style.display = "none";
     document.getElementById("saveScoreBtn").style.display = "none";
     document.getElementById("highScoreMessage").textContent = "Your score has been saved!";
     document.getElementById("nameValidationMessage").style.display = "none"; // Hide validation message
   }
   
-  async function saveHighScoreToSupabase(highScore) {
-    try {
-      const { data, error } = await supabaseClient
-        .from('high_scores')
-        .insert([
-          { 
+  async function saveHighScoreWithFallback(highScore) {
+    // Try Supabase first if available
+    if (isSupabaseAvailable && supabaseClient) {
+      try {
+        console.log("💾 Attempting to save high score to Supabase...");
+
+        // Ensure the event exists in the events table
+        await ensureEventExists(getCurrentEvent());
+
+        const { error } = await supabaseClient
+          .from('high_scores')
+          .insert([{
+            id: highScore.id,
             name: highScore.name,
             score: highScore.score,
-            game_type: highScore.type,
-            created_at: new Date().toISOString()
-          }
-        ]);
-      
-      if (error) {
-        console.error('Error saving high score:', error);
-        // Fall back to localStorage
-        saveHighScoreLocally(highScore);
-      } else {
-        console.log('High score saved successfully');
-        // Reload scores from server to get updated list
-        loadHighScores();
+            game_type: highScore.game_type,
+            event_id: highScore.event_id,
+            created_at: highScore.created_at
+          }]);
+
+        if (!error) {
+          console.log(`✅ Score saved to cloud`);
+        } else {
+          console.log("⚠️ Cloud save failed - using local storage");
+        }
+      } catch (e) {
+        console.log("⚠️ Cloud save failed - using local storage");
       }
-    } catch (e) {
-      console.error('Failed to save high score:', e);
-      // Fall back to localStorage
-      saveHighScoreLocally(highScore);
+    } else {
+      console.log("ℹ️ Supabase not available - using local storage");
+    }
+
+    // Always save to localStorage as backup
+    saveHighScoreLocally(highScore);
+  }
+
+  // Manual sync button handler
+  async function syncManual() {
+    if (!isSupabaseAvailable) {
+      alert("No cloud connection available. Please check your internet connection.");
+      return;
+    }
+
+    const localScores = JSON.parse(localStorage.getItem("highScores") || "[]");
+
+    if (localScores.length === 0) {
+      alert("No local scores to sync. Try downloading fresh scores from cloud!");
+      await loadHighScoresFromCloud();
+      return;
+    }
+
+    console.log(`🔄 Syncing ${localScores.length} local scores with cloud...`);
+
+    // Ensure current event exists in database
+    await ensureEventExists(getCurrentEvent());
+
+    let uploaded = 0;
+    let skipped = 0;
+
+    for (const score of localScores) {
+      try {
+        // Check if score already exists in cloud
+        const { data: existing } = await supabaseClient
+          .from('high_scores')
+          .select('id')
+          .eq('id', score.id)
+          .single();
+
+        if (existing) {
+          skipped++;
+          continue;
+        }
+
+        // Upload score if it doesn't exist
+        const { error } = await supabaseClient
+          .from('high_scores')
+          .insert([{
+            id: score.id,
+            name: score.name,
+            score: score.score,
+            game_type: score.game_type,
+            event_id: score.event_id,
+            created_at: score.created_at
+          }]);
+
+        if (!error) {
+          uploaded++;
+        }
+      } catch (e) {
+        console.log(`⚠️ Failed to sync score ${score.id}`);
+      }
+    }
+
+    // Reload fresh scores from cloud
+    await loadHighScoresFromCloud();
+
+    if (uploaded > 0) {
+      alert(`Sync complete: ${uploaded} uploaded, ${skipped} already in cloud`);
+    } else {
+      alert(`All scores already in cloud! Leaderboard updated.`);
     }
   }
-  
+
   function saveHighScoreLocally(highScore) {
-    // Traditional localStorage approach as fallback
-    highScores.push(highScore);
-    highScores.sort((a, b) => b.score - a.score);
-    highScores = highScores.slice(0, 10);
-    localStorage.setItem("highScores", JSON.stringify(highScores));
+    // Simple localStorage approach
+    let localScores = JSON.parse(localStorage.getItem("highScores") || "[]");
+
+    // Add new score
+    localScores.push(highScore);
+
+    // Sort and keep top 10
+    localScores.sort((a, b) => b.score - a.score);
+    localScores = localScores.slice(0, 10);
+
+    // Save to localStorage
+    localStorage.setItem("highScores", JSON.stringify(localScores));
+    highScores = localScores;
+
+    console.log("✅ Score saved to local storage");
     updateScoreBoard();
   }
-  
+
+  // Enhanced local storage with file download
+  function downloadScoresToFile(scores) {
+    const dataStr = JSON.stringify(scores, null, 2);
+    const dataBlob = new Blob([dataStr], {type: "application/json"});
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `morse-highscores-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
   function endGame() {
     gameActive = false;
     clearInterval(timerInterval);
-    
+
     // Play error sound when game ends (timer reaches 0)
     playGameErrorSound();
-    
+
+    // Generate and display score ID immediately
+    const currentScoreId = generateShortId();
+    document.getElementById("scoreIdValue").textContent = currentScoreId;
+    document.getElementById("scoreIdDisplay").style.display = "block";
+
     // Display final score
     document.getElementById("finalScore").textContent = `Final Score: ${score}`;
-    
+
     // We don't need to show the last wrong answer since game doesn't end on wrong answers anymore
     document.getElementById("lastWrongAnswer").style.display = "none";
-    
+
     // Check for high score and show appropriate UI
     const isHighScore = score > 0 && (highScores.length < 10 || score > highScores[highScores.length-1].score);
-    
+
     if (isHighScore) {
       document.getElementById("nameInputContainer").style.display = "block";
       document.getElementById("saveScoreBtn").style.display = "inline-block";
       document.getElementById("highScoreMessage").textContent = "New High Score!";
-      
+
       // Focus the input field
       setTimeout(() => {
         document.getElementById("playerNameInput").focus();
@@ -1386,11 +1776,14 @@
       document.getElementById("saveScoreBtn").style.display = "none";
       document.getElementById("highScoreMessage").textContent = "";
     }
-    
+
     // Display modal
     document.getElementById("gameOverModal").style.display = "flex";
-    
+
     updateScoreBoard();
+
+    // Store the current score ID for use when saving
+    window.currentScoreId = currentScoreId;
   }
 
   function toggleCheatMode() {
