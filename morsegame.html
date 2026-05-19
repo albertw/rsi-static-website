@@ -1218,14 +1218,17 @@
     return keys[randomBuffer[0] % keys.length];
   }
 
-  function startGame() {
+  // Sleep function for delays
+  const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+  async function startGame() {
     score = 0;
     gameActive = true;
     clearProgressDisplay();
-    
+
     // Initialize audio on game start (requires user interaction)
     initializeAudio();
-    
+
     if (!audioCtx) {
       try {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1233,18 +1236,21 @@
         console.error("Web Audio API not supported:", e);
       }
     }
-    
+
     // Play the game start sound
     playGameStartSound();
-    
+
     document.getElementById("gameIntro").style.display = "none";
     document.getElementById("gameArea").style.display = "block";
-    
+
     // Hide high score section during gameplay
     document.getElementById("highScoreSection").style.display = "none";
-    
+
     updateScoreBoard();
     startTimer();
+
+    // Wait for start sound to finish before asking first question
+    await sleep(1500); // 1.5 second delay
     askQuestion();
     
     // Update cheat display if needed
