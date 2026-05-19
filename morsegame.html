@@ -1059,7 +1059,14 @@
   // Load high scores from Supabase with event filtering and intelligent fallback
   async function loadHighScores() {
     const currentEvent = getCurrentEvent();
-    const localScores = JSON.parse(localStorage.getItem("highScores") || "[]");
+    const allLocalScores = JSON.parse(localStorage.getItem("highScores") || "[]");
+
+    // Filter local scores by current event (same logic as cloud filtering)
+    let localScores = allLocalScores;
+    if (currentEvent.id !== 'global') {
+      localScores = allLocalScores.filter(score => score.event_id === currentEvent.id);
+      console.log(`📂 Filtered ${localScores.length} local scores for event: ${currentEvent.id}`);
+    }
 
     // Try loading from cloud first
     if (isSupabaseAvailable && supabaseClient) {
@@ -1082,7 +1089,13 @@
           // Merge cloud scores with local scores instead of overwriting
           const mergedScores = mergeScores(localScores, data);
           highScores = mergedScores;
-          localStorage.setItem("highScores", JSON.stringify(highScores));
+
+          // IMPORTANT: Don't overwrite localStorage with just current event scores
+          // Keep all existing scores, just update the current event's scores
+          // This preserves scores from other events
+          const otherEventScores = allLocalScores.filter(s => s.event_id !== currentEvent.id);
+          const updatedAllScores = [...otherEventScores, ...mergedScores];
+          localStorage.setItem("highScores", JSON.stringify(updatedAllScores));
 
           // Log merge statistics
           const localOnly = localScores.filter(s => !data.find(d => d.id === s.id)).length;
