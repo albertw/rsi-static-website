@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>High Score Certificate - Morse Code Challenge</title>
+  <!-- Press Start 2P retro pixel font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Config -->
+  <script src="game-config-local.js"></script>
+  <script src="game-config.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Press Start 2P', cursive, sans-serif;
+      text-align: center;
+      padding: 0;
+      margin: 0;
+      line-height: 1.4;
+      background: #000;
+      min-height: 100vh;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Scanline effect for CRT feel */
+    body::after {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.15),
+        rgba(0, 0, 0, 0.15) 1px,
+        transparent 1px,
+        transparent 2px
+      );
+      pointer-events: none;
+    }
+
+    /* SEARCH SCREEN */
+    #searchScreen {
+      width: 100%;
+      max-width: 600px;
+      padding: 40px 20px;
+      z-index: 1;
+    }
+
+    .arcade-title {
+      font-size: 32px;
+      color: #FFD700;
+      text-shadow: 4px 4px 0 #8B4513, 0 0 20px #FFD700;
+      margin-bottom: 30px;
+      animation: titleBlink 2s infinite;
+    }
+
+    @keyframes titleBlink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.8; }
+    }
+
+    .subtitle {
+      font-size: 12px;
+      color: #4CAF50;
+      margin-bottom: 40px;
+    }
+
+    .code-input-section {
+      background-color: #000;
+      border: 4px solid #4CAF50;
+      padding: 30px;
+      margin: 20px auto;
+      max-width: 400px;
+      box-shadow: 0 0 20px rgba(76, 175, 80, 0.5), inset 0 0 20px rgba(76, 175, 80, 0.1);
+    }
+
+    .code-input-section p {
+      font-size: 10px;
+      color: #888;
+      margin-bottom: 20px;
+    }
+
+    #codeInput {
+      font-family: 'Press Start 2P', cursive, sans-serif;
+      font-size: 20px;
+      padding: 15px;
+      width: 100%;
+      max-width: 200px;
+      text-align: center;
+      border: 3px solid #4CAF50;
+      background-color: #000;
+      color: #4CAF50;
+      text-transform: uppercase;
+      letter-spacing: 4px;
+      margin-bottom: 20px;
+    }
+
+    #codeInput:focus {
+      outline: none;
+      box-shadow: 0 0 15px rgba(76, 175, 80, 0.8);
+      border-color: #FFD700;
+      color: #FFD700;
+    }
+
+    .arcade-btn {
+      font-family: 'Press Start 2P', cursive, sans-serif;
+      font-size: 12px;
+      padding: 15px 30px;
+      background: linear-gradient(180deg, #5a5a5a, #333);
+      color: #fff;
+      border: 3px solid #888;
+      border-radius: 4px;
+      cursor: pointer;
+      text-shadow: 2px 2px 0 #000;
+      box-shadow: 0 4px 0 #222, 0 6px 10px rgba(0,0,0,0.5);
+      transition: all 0.1s;
+    }
+
+    .arcade-btn:hover {
+      background: linear-gradient(180deg, #6a6a6a, #444);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 0 #222, 0 8px 15px rgba(0,0,0,0.5);
+    }
+
+    .arcade-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 #222;
+    }
+
+    .arcade-btn.primary {
+      background: linear-gradient(180deg, #4CAF50, #2E7D32);
+      border-color: #66BB6A;
+      box-shadow: 0 4px 0 #1B5E20, 0 6px 10px rgba(76, 175, 80, 0.5);
+    }
+
+    .arcade-btn.primary:hover {
+      background: linear-gradient(180deg, #66BB6A, #388E3C);
+      box-shadow: 0 6px 0 #1B5E20, 0 8px 15px rgba(76, 175, 80, 0.5);
+    }
+
+    #errorMessage {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #3d1111;
+      color: #ff4444;
+      border: 3px solid #ff4444;
+      font-size: 10px;
+      animation: errorBlink 0.5s infinite;
+    }
+
+    @keyframes errorBlink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    /* CERTIFICATE SCREEN */
+    #certificateScreen {
+      display: none;
+      width: 100%;
+      max-width: 900px;
+      padding: 40px 20px;
+      z-index: 1;
+    }
+
+    .highscore-header {
+      margin-bottom: 30px;
+    }
+
+    .rsi-logo {
+      font-size: 24px;
+      color: #4CAF50;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 0 #000;
+    }
+
+    .highscore-title {
+      font-size: 48px;
+      color: #FFD700;
+      text-shadow: 4px 4px 0 #8B4513;
+      margin-bottom: 10px;
+      animation: rainbowGlow 3s infinite;
+    }
+
+    @keyframes rainbowGlow {
+      0% { text-shadow: 4px 4px 0 #8B4513, 0 0 20px #FF0000; }
+      16% { text-shadow: 4px 4px 0 #8B4513, 0 0 20px #FF00FF; }
+      33% { text-shadow: 4px 4px 0 #8B4513, 0 0 20px #00FFFF; }
+      50% { text-shadow: 4px 4px 0 #8B4513, 0 0 20px #FFFF00; }
+      66% { text-shadow: 4px 4px 0 #8B4513, 0 0 20px #00FF00; }
+      83% { text-shadow: 4px 4px 0 #8B4513, 0 0 20px #0000FF; }
+      100% { text-shadow: 4px 4px 0 #8B4513, 0 0 20px #FF0000; }
+    }
+
+    .highscore-subtitle {
+      font-size: 14px;
+      color: #4CAF50;
+    }
+
+    /* Main certificate container - arcade screen style */
+    .arcade-screen {
+      background: linear-gradient(180deg, #0a0a0a 0%, #1a1a1a 100%);
+      border: 8px solid #333;
+      border-radius: 10px;
+      padding: 40px;
+      box-shadow:
+        0 0 0 4px #000,
+        0 0 0 8px #666,
+        0 0 50px rgba(255, 215, 0, 0.3);
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    /* CRT screen glow effect */
+    .arcade-screen::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.3) 100%);
+      pointer-events: none;
+      border-radius: 8px;
+    }
+
+    /* Pixel border decorations */
+    .pixel-border {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background-color: #FFD700;
+    }
+
+    .pixel-border.tl { top: -4px; left: -4px; clip-path: polygon(0 0, 100% 0, 0 100%); }
+    .pixel-border.tr { top: -4px; right: -4px; clip-path: polygon(0 0, 100% 0, 100% 100%); }
+    .pixel-border.bl { bottom: -4px; left: -4px; clip-path: polygon(0 0, 0 100%, 100% 100%); }
+    .pixel-border.br { bottom: -4px; right: -4px; clip-path: polygon(100% 0, 0 100%, 100% 100%); }
+
+    /* Achievement trophy */
+    .achievement-badge {
+      font-size: 60px;
+      margin-bottom: 20px;
+      animation: bounce 1s infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    /* Player name - large blinking */
+    .player-name {
+      font-size: 36px;
+      color: #FFD700;
+      margin: 20px 0;
+      padding: 20px;
+      background-color: #1a1a00;
+      border: 4px solid #FFD700;
+      text-shadow: 3px 3px 0 #000;
+      animation: nameGlow 1.5s infinite alternate;
+    }
+
+    @keyframes nameGlow {
+      from { box-shadow: 0 0 10px #FFD700; border-color: #FFD700; }
+      to { box-shadow: 0 0 30px #FFD700, 0 0 60px #FFD700; border-color: #FFA500; }
+    }
+
+    /* High score table styling */
+    .highscore-table {
+      margin: 30px auto;
+      width: 100%;
+      max-width: 600px;
+      border-collapse: collapse;
+    }
+
+    .highscore-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 2px dashed #333;
+    }
+
+    .highscore-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .hs-label {
+      color: #888;
+      font-size: 10px;
+      width: 40%;
+    }
+
+    .hs-value {
+      color: #fff;
+      font-size: 12px;
+    }
+
+    .hs-value.highlight {
+      color: #4CAF50;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    /* Game type badge */
+    .game-badge {
+      display: inline-block;
+      padding: 10px 20px;
+      margin: 20px 0;
+      background: linear-gradient(180deg, #2E7D32, #1B5E20);
+      border: 3px solid #4CAF50;
+      color: #FFD700;
+      font-size: 14px;
+      box-shadow: 0 4px 0 #0d3d0d;
+    }
+
+    /* Custom message template */
+    .custom-message {
+      font-size: 10px;
+      color: #aaa;
+      font-style: italic;
+      margin: 20px auto;
+      max-width: 500px;
+      padding: 15px;
+      border-left: 4px solid #4CAF50;
+      background-color: #0a0a0a;
+      text-align: left;
+    }
+
+    /* Bottom actions */
+    .bottom-actions {
+      margin-top: 30px;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    /* Score ID display */
+    .score-id {
+      font-size: 10px;
+      color: #666;
+      margin-top: 20px;
+      letter-spacing: 2px;
+    }
+
+    /* Decorative pixel elements */
+    .pixel-divider {
+      font-size: 20px;
+      color: #4CAF50;
+      margin: 20px 0;
+      letter-spacing: 8px;
+    }
+
+    /* Print styles - compact layout to fit one page */
+    @media print {
+      body::after {
+        display: none;
+      }
+
+      body {
+        background: #fff;
+        color: #000;
+        zoom: 100%;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+
+      /* Remove top padding from certificate screen */
+      #certificateScreen {
+        padding: 0 !important;
+      }
+
+      /* More compact layout */
+      .arcade-screen {
+        box-shadow: none;
+        border: 3px solid #000;
+        background: #fff;
+        padding: 8px !important;
+        max-width: 98%;
+      }
+
+      * {
+        animation: none !important;
+        text-shadow: none !important;
+        box-shadow: none !important;
+      }
+
+      .pixel-border {
+        display: none;
+      }
+
+      /* Remove all header margins for print */
+      .highscore-header {
+        margin-bottom: 5px !important;
+        margin-top: 0 !important;
+      }
+
+      .rsi-logo {
+        font-size: 12px !important;
+        margin-bottom: 2px !important;
+        margin-top: 5px !important;
+      }
+
+      .highscore-title {
+        color: #000;
+        font-size: 20px !important;
+        margin-bottom: 2px !important;
+        margin-top: 0 !important;
+      }
+
+      .highscore-subtitle {
+        font-size: 9px !important;
+        color: #000;
+        margin-bottom: 5px !important;
+      }
+
+      .achievement-badge {
+        font-size: 28px !important;
+        margin-bottom: 5px !important;
+        margin-top: 5px !important;
+      }
+
+      .player-name {
+        background: #f0f0f0;
+        color: #000;
+        border: 2px solid #000;
+        font-size: 16px !important;
+        padding: 6px !important;
+        margin: 5px 0 !important;
+      }
+
+      .game-badge {
+        background: #f0f0f0;
+        border: 2px solid #000;
+        color: #000;
+        font-size: 10px !important;
+        padding: 4px 8px !important;
+        margin: 5px 0 !important;
+      }
+
+      /* Compact table */
+      .highscore-table {
+        margin: 5px auto !important;
+        max-width: 500px;
+      }
+
+      .highscore-table td {
+        border-bottom: 1px solid #000;
+        padding: 3px !important;
+      }
+
+      .hs-label {
+        font-size: 8px !important;
+        width: 40%;
+      }
+
+      .hs-value {
+        color: #000;
+        font-size: 9px !important;
+      }
+
+      .hs-value.highlight {
+        color: #000;
+        font-weight: bold;
+        font-size: 11px !important;
+      }
+
+      /* Tighter spacing */
+      .pixel-divider {
+        margin: 5px 0 !important;
+        font-size: 12px !important;
+      }
+
+      .custom-message {
+        border-left: 2px solid #000;
+        background: #f0f0f0;
+        color: #333;
+        font-size: 8px !important;
+        margin: 5px auto !important;
+        max-width: 450px;
+        padding: 4px !important;
+      }
+
+      .arcade-screen p {
+        font-size: 9px !important;
+        margin: 3px 0 !important;
+      }
+
+      @page {
+        size: A4 landscape;
+        margin: 0.3cm;
+      }
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 700px) {
+      .highscore-title {
+        font-size: 28px;
+      }
+
+      .player-name {
+        font-size: 20px;
+      }
+
+      .arcade-screen {
+        padding: 20px;
+      }
+
+      .achievement-badge {
+        font-size: 40px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SEARCH SCREEN -->
+  <div id="searchScreen">
+    <div class="arcade-title">★ HIGH SCORE ★</div>
+    <div class="subtitle">ENTER YOUR CODE TO CLAIM YOUR CERTIFICATE</div>
+
+    <div class="code-input-section">
+      <p>ENTER THE CODE FROM YOUR GAME:</p>
+      <input type="text" id="codeInput" maxlength="6" placeholder="______" autocomplete="off">
+      <br>
+      <button class="arcade-btn primary" id="submitBtn">▼ SUBMIT ▼</button>
+    </div>
+
+    <div id="errorMessage" style="display: none;"></div>
+  </div>
+
+  <!-- CERTIFICATE SCREEN -->
+  <div id="certificateScreen">
+    <div class="highscore-header">
+      <div class="rsi-logo">▓▓▓ RSI ▓▓▓</div>
+      <div class="highscore-title">★ HIGH SCORE ★</div>
+      <div class="highscore-subtitle">RADIO SCOUTING IRELAND - MORSE CODE CHALLENGE</div>
+    </div>
+
+    <div class="arcade-screen">
+      <div class="pixel-border tl"></div>
+      <div class="pixel-border tr"></div>
+      <div class="pixel-border bl"></div>
+      <div class="pixel-border br"></div>
+
+      <div class="achievement-badge">🏆</div>
+
+      <p style="font-size: 12px; margin: 0;">CONGRATULATIONS TO</p>
+      <div id="playerName" class="player-name"></div>
+
+      <p style="font-size: 12px; margin: 20px 0 10px;">FOR ACHIEVING A HIGH SCORE IN</p>
+      <div id="gameBadge" class="game-badge"></div>
+
+      <div class="pixel-divider">◄ ►</div>
+
+      <table class="highscore-table">
+        <tr>
+          <td class="hs-label">► RANK</td>
+          <td class="hs-value" id="rankValue">★★★ HIGH SCORE ★★★</td>
+        </tr>
+        <tr>
+          <td class="hs-label">► SCORE</td>
+          <td class="hs-value highlight" id="scoreValue"></td>
+        </tr>
+        <tr>
+          <td class="hs-label">► EVENT</td>
+          <td class="hs-value" id="eventValue"></td>
+        </tr>
+        <tr>
+          <td class="hs-label">► LOCATION</td>
+          <td class="hs-value" id="locationValue"></td>
+        </tr>
+        <tr>
+          <td class="hs-label">► DATE</td>
+          <td class="hs-value" id="dateValue"></td>
+        </tr>
+      </table>
+
+      <div id="customMessage" class="custom-message"></div>
+
+      <div class="pixel-divider">◄ ►</div>
+    </div>
+
+    <div class="bottom-actions no-print">
+      <button class="arcade-btn" id="printBtn">🖨️ PRINT / SAVE AS PDF</button>
+      <button class="arcade-btn" id="searchAgainBtn">🔍 ANOTHER CODE</button>
+    </div>
+
+    <div class="print-instruction no-print" style="font-size: 8px; color: #888; margin-top: 15px; letter-spacing: 1px;">
+      TIP: SELECT "SAVE AS PDF" AS THE DESTINATION
+    </div>
+
+    <div class="score-id">CODE: <span id="displayCode"></span></div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async function() {
+      // Safety check: ensure gameConfig is defined
+      // TODO: probably should just fail if we can get the connection.
+      if (typeof window.gameConfig === 'undefined') {
+        console.warn('⚠️ game-config.js not loaded, using fallback defaults');
+        window.gameConfig = {
+          supabase_url: null,
+          supabase_key: null
+        };
+      }
+
+      // Initialize Supabase
+      const supabaseUrl = window.gameConfig?.supabase_url;
+      const supabaseKey = window.gameConfig?.supabase_key;
+      let supabaseClient = null;
+
+      if (supabaseUrl && supabaseKey) {
+        supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+      }
+
+      // Get ID from URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const codeId = urlParams.get('id')?.toUpperCase();
+
+      if (codeId) {
+        await loadCertificate(codeId, supabaseClient);
+      }
+
+      // Submit button
+      document.getElementById('submitBtn').addEventListener('click', async () => {
+        const inputCode = document.getElementById('codeInput').value.toUpperCase().trim();
+        if (inputCode.length === 6) {
+          await loadCertificate(inputCode, supabaseClient);
+        } else {
+          showError('PLEASE ENTER A VALID CODE');
+        }
+      });
+
+      // Enter key on input
+      document.getElementById('codeInput').addEventListener('keypress', async (e) => {
+        if (e.key === 'Enter') {
+          const inputCode = document.getElementById('codeInput').value.toUpperCase().trim();
+          if (inputCode.length === 6) {
+            await loadCertificate(inputCode, supabaseClient);
+          } else {
+            showError('PLEASE ENTER A VALID CODE');
+          }
+        }
+      });
+
+      // Print button
+      document.getElementById('printBtn').addEventListener('click', () => {
+        window.print();
+      });
+
+      // Search again button
+      document.getElementById('searchAgainBtn').addEventListener('click', () => {
+        window.location.href = 'certificate.html';
+      });
+    });
+
+    async function loadCertificate(codeId, supabaseClient) {
+      const searchScreen = document.getElementById('searchScreen');
+      const certificateScreen = document.getElementById('certificateScreen');
+      const errorMessage = document.getElementById('errorMessage');
+
+      if (!supabaseClient) {
+        showError('DATABASE CONNECTION NOT AVAILABLE');
+        return;
+      }
+
+      try {
+        console.log('🔍 Loading certificate for code:', codeId);
+
+        // First, get the high score
+        const { data: scoreData, error: scoreError } = await supabaseClient
+          .from('high_scores')
+          .select('*')
+          .eq('id', codeId)
+          .single();
+
+        if (scoreError || !scoreData) {
+          console.error('Score query error:', scoreError);
+          showError('INVALID CODE - NO SCORE FOUND');
+          return;
+        }
+
+        console.log('✅ Score found:', scoreData);
+
+        // Get event data separately
+        let eventData = null;
+        if (scoreData.event_id) {
+          const { data: eventResult, error: eventError } = await supabaseClient
+            .from('events')
+            .select('*')
+            .eq('id', scoreData.event_id)
+            .maybeSingle();
+
+          if (!eventError && eventResult) {
+            eventData = eventResult;
+            console.log('✅ Event found:', eventData);
+          }
+        }
+
+        // Populate certificate
+        document.getElementById('playerName').textContent = scoreData.name;
+        document.getElementById('scoreValue').textContent = scoreData.score + ' PTS';
+        document.getElementById('dateValue').textContent = new Date(scoreData.created_at).toLocaleDateString();
+        document.getElementById('displayCode').textContent = codeId;
+
+        // Event info
+        document.getElementById('eventValue').textContent = eventData?.name || 'MORSE CODE CHALLENGE';
+        document.getElementById('locationValue').textContent = eventData?.location || 'ONLINE';
+        document.getElementById('customMessage').textContent = eventData?.certificate_template || '';
+
+        // Game type display
+        const gameTypeNames = {
+          'letters': 'LETTERS ONLY',
+          'lettersNumbers': 'LETTERS + NUMBERS',
+          'lettersNumbersPunctuation': 'FULL MORSE CODE'
+        };
+        document.getElementById('gameBadge').textContent = gameTypeNames[scoreData.game_type] || scoreData.game_type.toUpperCase();
+
+        // Show certificate, hide search
+        searchScreen.style.display = 'none';
+        certificateScreen.style.display = 'block';
+        errorMessage.style.display = 'none';
+
+        console.log('✅ Certificate loaded successfully');
+
+      } catch (err) {
+        console.error('Error loading certificate:', err);
+        showError('ERROR LOADING CERTIFICATE');
+      }
+    }
+
+    function showError(message) {
+      const errorMessage = document.getElementById('errorMessage');
+      errorMessage.textContent = 'ERROR: ' + message;
+      errorMessage.style.display = 'block';
+    }
+  </script>
+</body>
+</html>

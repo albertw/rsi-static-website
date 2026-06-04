@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <a href="index.html" class="text-white hover:text-rsi-accent transition-colors duration-300 font-medium">Home</a>
                     <a href="resources.html" class="text-white hover:text-rsi-accent transition-colors duration-300 font-medium">Resources</a>
                     <a href="morsegame.html" class="text-white hover:text-rsi-accent transition-colors duration-300 font-medium">Morse Game</a>
+                    <a href="certificate.html" class="text-white hover:text-rsi-accent transition-colors duration-300 font-medium">Certificate</a>
                 </nav>
             </div>
 
@@ -31,6 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <a href="index.html" class="block py-2 text-white hover:text-rsi-accent transition-colors duration-300">Home</a>
                 <a href="resources.html" class="block py-2 text-white hover:text-rsi-accent transition-colors duration-300">Resources</a>
                 <a href="morsegame.html" class="block py-2 text-white hover:text-rsi-accent transition-colors duration-300">Morse Game</a>
+                <a href="certificate.html" class="block py-2 text-white hover:text-rsi-accent transition-colors duration-300">Certificate</a>
             </nav>
         </div>
     </header>
