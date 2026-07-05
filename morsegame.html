@@ -545,19 +545,27 @@
       border-color: #3e8e41;
       color: white;
     }
-    #creditsButton {
+    .nav-buttons {
       position: fixed;
       top: 10px;
       left: 10px;
+      display: flex;
+      gap: 10px;
+      z-index: 1000;
+    }
+    .nav-buttons button {
+      font-family: 'Press Start 2P', cursive, sans-serif;
+      font-size: 12px;
+      padding: 6px 10px;
       background-color: #333;
       color: white;
       border: 2px solid #555;
       border-radius: 4px;
-      padding: 6px 10px;
-      font-size: 12px;
       cursor: pointer;
-      z-index: 1000;
-      font-family: 'Press Start 2P', cursive, sans-serif;
+    }
+    .nav-buttons button:hover {
+      background-color: #555;
+      border-color: #777;
     }
     #creditsContainer {
       position: fixed;
@@ -602,8 +610,12 @@
 <body>
   <h1>Morse Code Quiz Game</h1>
   <div id="cheatIndicator">CHEAT MODE ACTIVE</div>
-  
-  <button id="creditsButton">Credits</button>
+
+  <div class="nav-buttons">
+    <button id="creditsButton">Credits</button>
+    <button id="gameHomeBtn" class="nav-btn">Game Home</button>
+    <button id="rsiHomeBtn" class="nav-btn">RSI Home</button>
+  </div>
   <div id="creditsContainer">
     <button id="closeCredits">×</button>
     <h4>Credits</h4>
@@ -1981,6 +1993,15 @@
   document.getElementById("playAgainBtn").addEventListener("click", resetGame);
   document.getElementById("returnToStartBtn").addEventListener("click", returnToStart);
   document.getElementById("saveScoreBtn").addEventListener("click", saveHighScore);
+
+  // Navigation buttons
+  document.getElementById("gameHomeBtn").addEventListener("click", function() {
+    window.location.href = 'morsegame.html';
+  });
+
+  document.getElementById("rsiHomeBtn").addEventListener("click", function() {
+    window.location.href = 'index.html';
+  });
 
   document.addEventListener("keydown", function(event) {
     // Track cheat code
