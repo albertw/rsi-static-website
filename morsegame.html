@@ -380,24 +380,47 @@
       width: 100%;
       border-collapse: collapse;
       margin-top: 15px;
-      font-size: 12px;
+      font-size: 10px;
       background-color: #000;
       position: relative;
       border: 3px solid #333;
       border-radius: 5px;
+      table-layout: fixed;
     }
     #highScoreTable th {
-      padding: 10px;
+      padding: 8px 5px;
       text-align: center;
       background-color: #000;
       color: #4CAF50;
       border-bottom: 2px solid #4CAF50;
     }
     #highScoreTable td {
-      padding: 8px 10px;
+      padding: 6px 4px;
       border-bottom: none;
       position: relative;
       background-color: #000;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    /* Column width specifications */
+    #highScoreTable th:nth-child(1) { width: 5%; }
+    #highScoreTable th:nth-child(2) { width: 18%; }
+    #highScoreTable th:nth-child(3) { width: 10%; }
+    #highScoreTable th:nth-child(4) { width: 12%; }
+    #highScoreTable th:nth-child(5) { width: 12%; }
+    #highScoreTable th:nth-child(6) { width: 12%; }
+    #highScoreTable th:nth-child(7) { width: 10%; }
+    #highScoreTable th:nth-child(8) { width: 11%; }
+    /* Mobile responsive */
+    @media (max-width: 768px) {
+      #highScoreTable {
+        font-size: 8px;
+      }
+      #highScoreTable th:nth-child(4),
+      #highScoreTable th:nth-child(6) {
+        display: none;
+      }
     }
     #highScoreTable tr:nth-child(even) {
       background-color: #000;
@@ -457,7 +480,7 @@
       animation: arcadeColorCycle 4s infinite;
       animation-delay: -3.6s;
     }
-    #highScoreTable tr td[colspan="3"] {
+    #highScoreTable tr td[colspan="8"] {
       animation: none;
       color: #4CAF50;
     }
@@ -654,10 +677,13 @@
       </div>
       <div id="highScoreMessage" style="margin: 15px 0; color: #4CAF50; font-weight: bold;"></div>
       <div id="nameInputContainer" style="display: none;">
-        <p>You got a high score! Enter your name:</p>
-        <input type="text" id="playerNameInput" placeholder="Your Name" maxlength="50">
-        <div id="nameValidationMessage" style="color: #f44336; font-size: 12px; margin-top: 5px; display: none;">
-          Name must be 50 characters or less
+        <p>You got a high score! Enter your details:</p>
+        <input type="text" id="playerNameInput" placeholder="Your Name" maxlength="50" required style="margin-bottom: 10px; width: 100%; padding: 8px; box-sizing: border-box; background-color: #000; color: #fff; border: 2px solid #444; border-radius: 4px;">
+        <input type="text" id="sectionInput" placeholder="Section (e.g., Cubs, Scouts, Ventures)" maxlength="50" required style="margin-bottom: 10px; width: 100%; padding: 8px; box-sizing: border-box; background-color: #000; color: #fff; border: 2px solid #444; border-radius: 4px;">
+        <input type="text" id="scoutGroupInput" placeholder="Scout Group (e.g., 123th Dublin)" maxlength="50" required style="margin-bottom: 10px; width: 100%; padding: 8px; box-sizing: border-box; background-color: #000; color: #fff; border: 2px solid #444; border-radius: 4px;">
+        <input type="text" id="countryInput" placeholder="Country" maxlength="50" required style="margin-bottom: 10px; width: 100%; padding: 8px; box-sizing: border-box; background-color: #000; color: #fff; border: 2px solid #444; border-radius: 4px;">
+        <div id="formValidationMessage" style="color: #f44336; font-size: 12px; margin-top: 5px; display: none;">
+          Please fill in all required fields
         </div>
       </div>
       <div class="modalButtons">
@@ -675,11 +701,16 @@
         <tr>
           <th>Pos</th>
           <th>Name</th>
+          <th>Section</th>
+          <th>Group</th>
+          <th>Country</th>
+          <th>Game</th>
+          <th>WPM</th>
           <th>Score</th>
         </tr>
       </thead>
       <tbody id="highScores">
-        <tr><td colspan="3">No high scores yet</td></tr>
+        <tr><td colspan="8">No high scores yet</td></tr>
       </tbody>
     </table>
 
@@ -702,6 +733,7 @@
   let supabaseClient;
   let isSupabaseAvailable = false;
   let currentEvent = null; // Will be loaded from database or config
+  let currentLevel = 0; // Words per minute, captured from game speed (default 0)
 
   // Safety check: ensure gameConfig is defined (fallback if game-config.js is missing)
   if (typeof gameConfig === 'undefined') {
@@ -1565,19 +1597,33 @@
   function updateScoreBoard() {
     document.getElementById("score").textContent = `Score: ${score}`;
     const hsTableBody = document.getElementById("highScores");
-    
+
     if (highScores.length > 0) {
       hsTableBody.innerHTML = highScores
         .map((s, i) => `
           <tr>
             <td>${i + 1}</td>
-            <td>${s.name}</td>
+            <td>${s.name || 'N/A'}</td>
+            <td>${s.section || 'N/A'}</td>
+            <td>${s.scout_group || 'N/A'}</td>
+            <td>${s.country || 'N/A'}</td>
+            <td>${getGameTypeLabel(s.game_type)}</td>
+            <td>${s.level || 0} WPM</td>
             <td>${s.score}</td>
           </tr>
         `).join("");
     } else {
-      hsTableBody.innerHTML = "<tr><td colspan='3'>No high scores yet</td></tr>";
+      hsTableBody.innerHTML = "<tr><td colspan='8'>No high scores yet</td></tr>";
     }
+  }
+
+  function getGameTypeLabel(gameType) {
+    const labels = {
+      'letters': 'Letters',
+      'lettersNumbers': 'Ltr+Num',
+      'lettersNumbersPunctuation': 'Full'
+    };
+    return labels[gameType] || gameType;
   }
   
   function showMessage(text, isCorrect) {
@@ -1656,28 +1702,38 @@
   }
   
   function saveHighScore() {
-    // Get name from input field instead of prompt
-    const nameInput = document.getElementById("playerNameInput");
-    let name = nameInput.value.trim();
+    // Get all required field values
+    const name = document.getElementById("playerNameInput").value.trim();
+    const section = document.getElementById("sectionInput").value.trim();
+    const scoutGroup = document.getElementById("scoutGroupInput").value.trim();
+    const country = document.getElementById("countryInput").value.trim();
 
-    // Validate name length
-    if (name.length > 50) {
-      document.getElementById("nameValidationMessage").style.display = "block";
-      return; // Don't proceed if name is too long
+    // Validate all required form fields
+    if (!name || !section || !scoutGroup || !country) {
+      document.getElementById('formValidationMessage').style.display = 'block';
+      return;
     }
 
-    // Use Anonymous if name is empty
-    name = name || "Anonymous";
+    // Validate field lengths
+    if (name.length > 50 || scoutGroup.length > 50 || country.length > 50) {
+      document.getElementById('formValidationMessage').textContent = 'Fields must be 50 characters or less';
+      document.getElementById('formValidationMessage').style.display = 'block';
+      return;
+    }
 
-    // Create the enhanced high score object with UUID and event support
+    // Create the enhanced high score object with all required fields
     const currentEvent = getCurrentEvent();
     const highScore = {
-      id: window.currentScoreId || generateShortId(), // Use the pre-generated ID
+      id: window.currentScoreId || generateShortId(),
       name: name,
       score: score,
-      game_type: gameType,              // CHANGED: renamed from 'type'
-      event_id: currentEvent.id,        // NEW: Include event_id (events table stores the rest)
-      created_at: new Date().toISOString() // CHANGED: renamed from 'date'
+      game_type: gameType,
+      event_id: currentEvent.id,
+      section: section,
+      scout_group: scoutGroup,
+      country: country,
+      level: currentLevel, // Captured from game speed (default 0)
+      created_at: new Date().toISOString()
     };
 
     // Save to Supabase with fallback
@@ -1686,7 +1742,7 @@
     document.getElementById("nameInputContainer").style.display = "none";
     document.getElementById("saveScoreBtn").style.display = "none";
     document.getElementById("highScoreMessage").textContent = "Your score has been saved!";
-    document.getElementById("nameValidationMessage").style.display = "none"; // Hide validation message
+    document.getElementById('formValidationMessage').style.display = "none";
   }
   
   async function saveHighScoreWithFallback(highScore) {
@@ -1706,11 +1762,15 @@
             score: highScore.score,
             game_type: highScore.game_type,
             event_id: highScore.event_id,
+            section: highScore.section,
+            scout_group: highScore.scout_group,
+            country: highScore.country,
+            level: highScore.level,
             created_at: highScore.created_at
           }]);
 
         if (!error) {
-          console.log(`✅ Score saved to cloud`);
+          console.log(`✅ Score saved to cloud with all fields`);
         } else {
           console.log("⚠️ Cloud save failed - using local storage");
         }

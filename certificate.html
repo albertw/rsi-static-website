@@ -530,6 +530,8 @@
   <!-- SEARCH SCREEN -->
   <div id="searchScreen">
     <div class="arcade-title">★ HIGH SCORE ★</div>
+
+    
     <div class="subtitle">ENTER YOUR CODE TO CLAIM YOUR CERTIFICATE</div>
 
     <div class="code-input-section">
@@ -574,6 +576,26 @@
         <tr>
           <td class="hs-label">► SCORE</td>
           <td class="hs-value highlight" id="scoreValue"></td>
+        </tr>
+        <tr>
+          <td class="hs-label">► SECTION</td>
+          <td class="hs-value" id="sectionValue"></td>
+        </tr>
+        <tr>
+          <td class="hs-label">► SCOUT GROUP</td>
+          <td class="hs-value" id="scoutGroupValue"></td>
+        </tr>
+        <tr>
+          <td class="hs-label">► COUNTRY</td>
+          <td class="hs-value" id="countryValue"></td>
+        </tr>
+        <tr>
+          <td class="hs-label">► GAME TYPE</td>
+          <td class="hs-value" id="gameTypeValue"></td>
+        </tr>
+        <tr>
+          <td class="hs-label">► WPM</td>
+          <td class="hs-value" id="levelValue"></td>
         </tr>
         <tr>
           <td class="hs-label">► EVENT</td>
@@ -717,6 +739,12 @@
         document.getElementById('dateValue').textContent = new Date(scoreData.created_at).toLocaleDateString();
         document.getElementById('displayCode').textContent = codeId;
 
+        // New fields
+        document.getElementById('sectionValue').textContent = scoreData.section || 'N/A';
+        document.getElementById('scoutGroupValue').textContent = scoreData.scout_group || 'N/A';
+        document.getElementById('countryValue').textContent = scoreData.country || 'N/A';
+        document.getElementById('levelValue').textContent = (scoreData.level || 0) + ' WPM';
+
         // Event info
         document.getElementById('eventValue').textContent = eventData?.name || 'MORSE CODE CHALLENGE';
         document.getElementById('locationValue').textContent = eventData?.location || 'ONLINE';
@@ -729,6 +757,7 @@
           'lettersNumbersPunctuation': 'FULL MORSE CODE'
         };
         document.getElementById('gameBadge').textContent = gameTypeNames[scoreData.game_type] || scoreData.game_type.toUpperCase();
+        document.getElementById('gameTypeValue').textContent = gameTypeNames[scoreData.game_type] || scoreData.game_type.toUpperCase();
 
         // Show certificate, hide search
         searchScreen.style.display = 'none';
