@@ -150,12 +150,6 @@
       color: white;
       border-color: #3e8e41;
     }
-
-    /* Score controls styling */
-    .score-controls button:hover {
-      background-color: #444;
-      border-color: #666;
-    }
     #timer {
       font-size: 28px;
       font-weight: bold;
@@ -586,6 +580,36 @@
       max-height: 80vh;
       overflow-y: auto;
     }
+    #adminContainer {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      max-width: 400px;
+      background-color: #000;
+      color: white;
+      border: 3px solid #f44336;
+      border-radius: 5px;
+      padding: 15px;
+      font-size: 12px;
+      text-align: center;
+      z-index: 1001;
+      display: none;
+      box-shadow: 0 0 10px rgba(0,0,0,0.6);
+      line-height: 1.6;
+    }
+    #adminContainer button {
+      font-family: 'Press Start 2P', cursive, sans-serif;
+      font-size: 10px;
+      padding: 8px 12px;
+      background-color: #333;
+      color: white;
+      border: 2px solid #555;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #adminContainer button:hover {
+      background-color: #555;
+    }
     #closeCredits {
       position: absolute;
       top: 5px;
@@ -624,7 +648,18 @@
     <p>8-Bit - Error by Breviceps -- <a href="https://freesound.org/s/450616/" target="_blank">https://freesound.org/s/450616/</a> -- License: Creative Commons 0</p>
     <p>8-bit start-game by KSAplay -- <a href="https://freesound.org/s/758957/" target="_blank">https://freesound.org/s/758957/</a> -- License: Creative Commons 0</p>
   </div>
-  
+
+  <div id="adminContainer">
+    <button id="closeAdmin">×</button>
+    <h4>Admin Panel</h4>
+    <p>Local Scores: <span id="adminScoreCount">0</span></p>
+    <button id="adminExportBtn" style="margin: 5px;">Export Scores</button>
+    <button id="adminSyncBtn" style="margin: 5px;">Sync with Cloud</button>
+    <button id="adminDeleteBtn" style="margin: 5px; background-color: #f44336;">Delete All Local Scores</button>
+    <div id="adminStatus" style="margin-top: 10px; padding: 8px; border-radius: 4px; display: none;"></div>
+    <pre id="adminScoresDisplay" style="margin-top: 10px; font-size: 10px; max-height: 200px; overflow-y: auto; background-color: #333; padding: 10px;">No local scores</pre>
+  </div>
+
   <div id="gameIntro">
     <p>Test your Morse code knowledge! This game will play a Morse code sequence, and you need to identify which letter it represents.</p>
     <p>Listen carefully to the dots and dashes, then type the corresponding letter.</p>
@@ -725,15 +760,6 @@
         <tr><td colspan="8">No high scores yet</td></tr>
       </tbody>
     </table>
-
-    <!-- Score controls -->
-    <div class="score-controls" style="margin-top: 20px; text-align: center;">
-      <button id="exportBtn" style="font-size: 12px; padding: 8px 15px; margin: 5px; background-color: #222; color: #fff; border: 2px solid #444; cursor: pointer;">📥 Export Scores</button>
-      <button id="syncBtn" style="font-size: 12px; padding: 8px 15px; margin: 5px; background-color: #4CAF50; color: #fff; border: 2px solid #45a049; cursor: pointer;">☁️ Sync with Cloud</button>
-    </div>
-
-    <!-- Sync status display -->
-    <div id="syncStatus" style="margin: 10px 0; padding: 8px; border-radius: 5px; display: none;"></div>
   </div>
   
   <script>
@@ -992,6 +1018,11 @@
   let cheatMode = false;
   let cheatKeySequence = [];
   const CHEAT_CODE = ['c', 'h', 'e', 'a', 't'];
+
+  // Admin mode variables
+  let adminMode = false;
+  let adminKeySequence = [];
+  const ADMIN_CODE = ['a', 'd', 'm', 'i', 'n'];
 
   // Add variables to track the last wrong answer
   let lastWrongAnswer = null;
@@ -1357,16 +1388,6 @@
     console.log("📊 Loading high scores...");
     await loadHighScores();
 
-    // Set up export/sync event handlers
-    document.getElementById('exportBtn').addEventListener('click', () => {
-      const scores = JSON.parse(localStorage.getItem("highScores") || "[]");
-      downloadScoresToFile(scores);
-    });
-
-    document.getElementById('syncBtn').addEventListener('click', async () => {
-      await syncManual();
-    });
-
     // Preload sounds when the document is loaded
     preloadSounds();
     
@@ -1381,7 +1402,32 @@
     document.getElementById("closeCredits").addEventListener("click", function() {
       document.getElementById("creditsContainer").style.display = "none";
     });
-    
+
+    // Admin panel buttons
+    document.getElementById("closeAdmin").addEventListener("click", function() {
+      document.getElementById("adminContainer").style.display = "none";
+      adminMode = false;
+    });
+
+    document.getElementById("adminExportBtn").addEventListener("click", function() {
+      const scores = JSON.parse(localStorage.getItem("highScores") || "[]");
+      downloadScoresToFile(scores);
+      showAdminStatus('Scores exported!', 'success');
+    });
+
+    document.getElementById("adminSyncBtn").addEventListener("click", async function() {
+      await syncManual();
+      updateAdminScoresDisplay();
+    });
+
+    document.getElementById("adminDeleteBtn").addEventListener("click", function() {
+      if (confirm('Delete ALL local scores? This cannot be undone.')) {
+        localStorage.removeItem("highScores");
+        updateAdminScoresDisplay();
+        showAdminStatus('All local scores deleted', 'success');
+      }
+    });
+
     // Add keypress support for space outside game to initialize audio
     document.addEventListener("keypress", function(e) {
       if (e.code === "Space" && !audioInitialized) {
@@ -1961,6 +2007,34 @@
     }
   }
 
+  function toggleAdminMode() {
+    adminMode = !adminMode;
+    document.getElementById('adminContainer').style.display = adminMode ? 'block' : 'none';
+    if (adminMode) {
+      updateAdminScoresDisplay();
+    }
+  }
+
+  function updateAdminScoresDisplay() {
+    const scores = JSON.parse(localStorage.getItem("highScores") || "[]");
+    document.getElementById('adminScoreCount').textContent = scores.length;
+    document.getElementById('adminScoresDisplay').textContent =
+      scores.length > 0 ? JSON.stringify(scores, null, 2) : 'No local scores';
+  }
+
+  function showAdminStatus(message, type = 'info') {
+    const statusEl = document.getElementById('adminStatus');
+    const colors = {
+      info: '#e3f2fd',
+      success: '#e8f5e9',
+      error: '#ffebee'
+    };
+    statusEl.style.display = 'block';
+    statusEl.style.backgroundColor = colors[type] || colors.info;
+    statusEl.textContent = message;
+    setTimeout(() => { statusEl.style.display = 'none'; }, 5000);
+  }
+
   function setGameType(type) {
     gameType = type;
     
@@ -2004,17 +2078,29 @@
   });
 
   document.addEventListener("keydown", function(event) {
-    // Track cheat code
+    // Track cheat code and admin code
     if (!event.ctrlKey && !event.altKey) {
       cheatKeySequence.push(event.key.toLowerCase());
       if (cheatKeySequence.length > CHEAT_CODE.length) {
         cheatKeySequence.shift(); // Remove oldest key
       }
-      
+
+      adminKeySequence.push(event.key.toLowerCase());
+      if (adminKeySequence.length > ADMIN_CODE.length) {
+        adminKeySequence.shift(); // Remove oldest key
+      }
+
       // Check if cheat code has been entered
       if (cheatKeySequence.join('') === CHEAT_CODE.join('')) {
         toggleCheatMode();
         cheatKeySequence = []; // Reset sequence
+        return;
+      }
+
+      // Check if admin code has been entered
+      if (adminKeySequence.join('') === ADMIN_CODE.join('')) {
+        toggleAdminMode();
+        adminKeySequence = []; // Reset sequence
         return;
       }
     }
