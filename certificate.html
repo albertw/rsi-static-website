@@ -582,6 +582,10 @@
           <td class="hs-value" id="sectionValue"></td>
         </tr>
         <tr>
+          <td class="hs-label">► AGE</td>
+          <td class="hs-value" id="ageValue"></td>
+        </tr>
+        <tr>
           <td class="hs-label">► SCOUT GROUP</td>
           <td class="hs-value" id="scoutGroupValue"></td>
         </tr>
@@ -741,6 +745,7 @@
 
         // New fields
         document.getElementById('sectionValue').textContent = scoreData.section || 'N/A';
+        document.getElementById('ageValue').textContent = scoreData.age || 'N/A';
         document.getElementById('scoutGroupValue').textContent = scoreData.scout_group || 'N/A';
         document.getElementById('countryValue').textContent = scoreData.country || 'N/A';
         document.getElementById('levelValue').textContent = (scoreData.level || 0) + ' WPM';
