@@ -664,23 +664,41 @@
   <div id="gameIntro">
     <p>Test your Morse code knowledge! This game will play a Morse code sequence, and you need to identify which letter it represents.</p>
     <p>Listen carefully to the dots and dashes, then type the corresponding letter.</p>
+    <div style="margin: 20px auto; max-width: 300px; text-align: center;">
+      <label for="wpmSelector" style="font-size: 14px; display: block; margin-bottom: 10px;">
+        Morse Speed: <span id="wpmDisplay">5</span> WPM
+      </label>
+      <input type="range" id="wpmSelector" min="5" max="50" value="5" step="1"
+             style="width: 100%; cursor: pointer;">
+      <div style="display: flex; justify-content: space-between; font-size: 10px; margin-top: 5px;">
+        <span>5 WPM</span>
+        <span>50 WPM</span>
+      </div>
+    </div>
     <div class="gameTypeSelector">
-      <button id="lettersOnly" class="gameTypeBtn active">Letters Only</button>
-      <button id="lettersNumbers" class="gameTypeBtn">Letters + Numbers</button>
-      <button id="lettersNumbersPunctuation" class="gameTypeBtn">Letters + Numbers + Punctuation</button>
+      <button id="level1" class="gameTypeBtn active">Level 1: Letters</button>
+      <button id="level2" class="gameTypeBtn">Level 2: Letters + Numbers</button>
+      <button id="level3" class="gameTypeBtn">Level 3: Letters + Numbers (Sound Only)</button>
+      <button id="level4" class="gameTypeBtn">Level 4: Letters + Numbers + Punctuation</button>
+      <button id="level5" class="gameTypeBtn">Level 5: Full (Sound Only)</button>
     </div>
     <div class="gameRules">
       <p><strong>Game Rules:</strong></p>
       <ul style="text-align: left;">
-        <li>You have 60 seconds to answer as many questions as possible</li>
+        <li>You have 90 seconds to answer as many questions as possible</li>
         <li>The game ends when the timer reaches 0</li>
-        <li>Points per correct answer:
+        <li>Select your Morse speed (5-50 WPM) - Higher speed = Higher score!</li>
+        <li>Scoring: (correct answers × level multiplier) × WPM
           <ul>
-            <li>Letters Only: 1 point</li>
-            <li>Letters + Numbers: 2 points</li>
-            <li>Letters + Numbers + Punctuation: 3 points</li>
+            <li>Level 1 (Letters): ×1</li>
+            <li>Level 2 (Letters + Numbers): ×2</li>
+            <li>Level 3 (Letters + Numbers, Sound Only): ×3</li>
+            <li>Level 4 (Letters + Numbers + Punctuation): ×4</li>
+            <li>Level 5 (Full, Sound Only): ×5</li>
           </ul>
         </li>
+        <li>Sound-only levels (3 & 5) hide the visual display</li>
+        <li>Earn a certificate: 100% correct in Level 5 at speed >5 WPM!</li>
       </ul>
     </div>
     <button id="startBtn" class="primary">Start Game</button>
@@ -711,6 +729,47 @@
     <div id="audioDebugContent"></div>
   </div>
   
+  <div id="congratsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.9); z-index: 2000; justify-content: center; align-items: center;">
+    <div class="modalContent" style="background-color: #000; color: #fff; padding: 40px; border-radius: 10px; border: 5px solid #FFD700; box-shadow: 0 4px 20px rgba(255, 215, 0, 0.3); max-width: 600px; width: 90%; text-align: center;">
+      <h2 style="color: #FFD700;">🎉 Congratulations! 🎉</h2>
+      <p style="font-size: 16px; margin: 20px 0;">You achieved a <strong>PERFECT SCORE!</strong></p>
+      <div style="margin: 20px 0; padding: 15px; background-color: #1a1a1a; border-radius: 5px;">
+        <p>Level 5: Letters, Numbers & Punctuation (Sound Only)</p>
+        <p>Speed: <span id="certWPM"></span> WPM</p>
+        <p>Accuracy: 100% (<span id="certCorrect"></span>/<span id="certTotal"></span> correct)</p>
+        <p>Final Score: <span id="certScore"></span></p>
+      </div>
+      <p style="margin: 20px 0;">You've earned a certificate! Please enter your details below:</p>
+      <div id="certFormContainer">
+        <input type="text" id="certNameInput" placeholder="Your Full Name" maxlength="50" required style="margin-bottom: 10px; width: 100%; padding: 10px; box-sizing: border-box; background-color: #000; color: #fff; border: 2px solid #444; border-radius: 4px;">
+        <select id="certSectionInput" required style="margin-bottom: 10px; width: 100%; padding: 10px; box-sizing: border-box; background-color: #000; color: #fff; border: 2px solid #444; border-radius: 4px; font-family: 'Press Start 2P', cursive, sans-serif; font-size: 12px;">
+          <option value="">Select Section</option>
+          <option value="Rainbow">Rainbow</option>
+          <option value="Ladybird">Ladybird</option>
+          <option value="Squirrel">Squirrel</option>
+          <option value="Brownie">Brownie</option>
+          <option value="Cub">Cub</option>
+          <option value="Guide">Guide</option>
+          <option value="Scout">Scout</option>
+          <option value="Venture">Venture</option>
+          <option value="Ranger">Ranger</option>
+          <option value="Explorer">Explorer</option>
+          <option value="Senior Branch">Senior Branch</option>
+          <option value="Other">Other</option>
+        </select>
+        <input type="number" id="certAgeInput" placeholder="Age" min="1" max="99" required style="margin-bottom: 10px; width: 100%; padding: 10px; box-sizing: border-box; background-color: #000; color: #fff; border: 2px solid #444; border-radius: 4px;">
+        <input type="text" id="certGroupInput" placeholder="Scout Group (e.g., 123th Dublin)" maxlength="50" required style="margin-bottom: 10px; width: 100%; padding: 10px; box-sizing: border-box; background-color: #000; color: #fff; border: 2px solid #444; border-radius: 4px;">
+        <div id="certValidationMessage" style="color: #f44336; font-size: 12px; margin-top: 5px; display: none;">
+          Please fill in all required fields
+        </div>
+      </div>
+      <div class="modalButtons">
+        <button id="generateCertBtn" style="background-color: #FFD700; color: #000; border-color: #FFA500;">Generate Certificate</button>
+        <button id="declineCertBtn" style="background-color: #333; border-color: #555;">Skip Certificate</button>
+      </div>
+    </div>
+  </div>
+
   <div id="gameOverModal">
     <div class="modalContent">
       <h2>Game Over!</h2>
@@ -1036,6 +1095,12 @@
   let cheatKeySequence = [];
   const CHEAT_CODE = ['c', 'h', 'e', 'a', 't'];
 
+  // WPM and visual display state
+  let currentWPM = 5;
+  let visualDisplayEnabled = true;
+  let totalQuestionsAsked = 0;
+  let correctAnswersCount = 0;
+
   // Admin mode variables
   let adminMode = false;
   let adminKeySequence = [];
@@ -1352,20 +1417,24 @@
   function resetGame() {
     // Hide modal
     document.getElementById("gameOverModal").style.display = "none";
-    
+
     // Clear any existing game
     clearInterval(timerInterval);
-    
+
     // Reset wrong answer tracking
     lastWrongAnswer = null;
     lastWrongMorse = null;
-    
+
+    // Reset accuracy tracking
+    totalQuestionsAsked = 0;
+    correctAnswersCount = 0;
+
     // Reset score for a new game
     score = 0;
-    
+
     // Update the score display
     updateScoreBoard();
-    
+
     // Start a new game with the same settings
     startGame();
   }
@@ -1373,24 +1442,28 @@
   function returnToStart() {
     // Hide modal
     document.getElementById("gameOverModal").style.display = "none";
-    
+
     // Clear any existing game
     clearInterval(timerInterval);
-    
+
     // Reset wrong answer tracking
     lastWrongAnswer = null;
     lastWrongMorse = null;
-    
+
+    // Reset accuracy tracking
+    totalQuestionsAsked = 0;
+    correctAnswersCount = 0;
+
     // Show intro screen
     document.getElementById("gameIntro").style.display = "block";
     document.getElementById("gameArea").style.display = "none";
-    
+
     // Show high score section when returning to start
     document.getElementById("highScoreSection").style.display = "block";
-    
+
     // Reload high scores from Supabase to get the latest data
     loadHighScores();
-    
+
     // Reset input field
     document.getElementById("playerNameInput").value = "";
   }
@@ -1445,6 +1518,54 @@
       }
     });
 
+    // Certificate button handlers
+    document.getElementById("generateCertBtn").addEventListener("click", function() {
+      const name = document.getElementById("certNameInput").value.trim();
+      const section = document.getElementById("certSectionInput").value;
+      const age = document.getElementById("certAgeInput").value;
+      const group = document.getElementById("certGroupInput").value.trim();
+
+      if (!name || !section || !age || !group) {
+        document.getElementById("certValidationMessage").style.display = 'block';
+        return;
+      }
+
+      const highScore = {
+        id: window.currentScoreId || generateShortId(),
+        name: name,
+        score: score,
+        game_type: gameType,
+        event_id: getCurrentEvent().id,
+        section: section,
+        age: parseInt(age),
+        scout_group: group,
+        country: "Ireland",
+        level: currentWPM,
+        certificate_eligible: true,
+        created_at: new Date().toISOString()
+      };
+
+      saveHighScoreWithFallback(highScore);
+
+      const certData = encodeURIComponent(JSON.stringify({
+        id: highScore.id,
+        name: name,
+        section: section,
+        age: age,
+        group: group,
+        wpm: currentWPM,
+        score: score,
+        date: new Date().toLocaleDateString()
+      }));
+
+      window.location.href = `certificate.html?data=${certData}`;
+    });
+
+    document.getElementById("declineCertBtn").addEventListener("click", function() {
+      document.getElementById("congratsModal").style.display = "none";
+      document.getElementById("gameOverModal").style.display = "flex";
+    });
+
     // Add keypress support for space outside game to initialize audio
     document.addEventListener("keypress", function(e) {
       if (e.code === "Space" && !audioInitialized) {
@@ -1473,20 +1594,36 @@
       }
     });
     
+    // WPM selector handler
+    const wpmSelector = document.getElementById("wpmSelector");
+    const wpmDisplay = document.getElementById("wpmDisplay");
+    wpmSelector.addEventListener("input", function() {
+      currentWPM = parseInt(this.value);
+      wpmDisplay.textContent = currentWPM;
+    });
+
     // Add game type selector handlers
-    document.getElementById("lettersOnly").addEventListener("click", function() {
-      setGameType("letters");
+    document.getElementById("level1").addEventListener("click", function() {
+      setGameType("level1");
     });
-    
-    document.getElementById("lettersNumbers").addEventListener("click", function() {
-      setGameType("lettersNumbers");
+
+    document.getElementById("level2").addEventListener("click", function() {
+      setGameType("level2");
     });
-    
-    document.getElementById("lettersNumbersPunctuation").addEventListener("click", function() {
-      setGameType("lettersNumbersPunctuation");
+
+    document.getElementById("level3").addEventListener("click", function() {
+      setGameType("level3");
     });
-    
-    setGameType("letters");
+
+    document.getElementById("level4").addEventListener("click", function() {
+      setGameType("level4");
+    });
+
+    document.getElementById("level5").addEventListener("click", function() {
+      setGameType("level5");
+    });
+
+    setGameType("level1");
     updateScoreBoard();
   });
 
@@ -1543,36 +1680,40 @@
   
   function playMorseTone(symbol, delay) {
     if (!audioEnabled) return;
-    
+
     if (!audioInitialized) {
       if (!initializeAudio()) {
         logAudioDebug("Failed to play tone - audio not initialized");
         return;
       }
     }
-    
+
     try {
       // Check if context is in suspended state (happens in some browsers)
       if (audioCtx.state === 'suspended') {
         logAudioDebug("Resuming suspended audio context");
         audioCtx.resume();
       }
-      
+
       const oscillator = audioCtx.createOscillator();
       const gainNode = audioCtx.createGain();
-      
+
       oscillator.type = 'sine';
       oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
       gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); // Explicit volume
-      
+
       oscillator.connect(gainNode);
       gainNode.connect(audioCtx.destination);
-      
-      const duration = symbol === '.' ? 0.1 : 0.3;
+
+      // Calculate duration based on WPM
+      // Adjusted formula for better game audio: dot = 0.6 / WPM
+      const dotDuration = 0.6 / currentWPM;
+      const duration = symbol === '.' ? dotDuration : (dotDuration * 3);
+
       oscillator.start(audioCtx.currentTime + delay);
       oscillator.stop(audioCtx.currentTime + delay + duration);
-      
-      logAudioDebug(`Playing tone: ${symbol}, delay: ${delay}, duration: ${duration}`);
+
+      logAudioDebug(`Playing tone: ${symbol}, WPM: ${currentWPM}, duration: ${duration.toFixed(3)}s`);
     } catch (e) {
       logAudioDebug(`Error playing tone: ${e.message}`);
     }
@@ -1581,25 +1722,43 @@
   function drawMorse(morseCode) {
     const display = document.getElementById("morseDisplay");
     display.innerHTML = "";
+
+    // Only show visual display if enabled (not sound-only mode)
+    if (visualDisplayEnabled) {
+      morseCode.split("").forEach((symbol, index) => {
+        const span = document.createElement("span");
+        span.textContent = symbol === "." ? "●" : "▬";
+        span.style.marginRight = "8px";
+        span.style.fontSize = "32px";
+        display.appendChild(span);
+      });
+    }
+
+    // Always play audio tones with WPM-based timing
+    // Build cumulative timing to ensure proper gaps between symbols
+    const dotDuration = 0.6 / currentWPM;
+    const dashDuration = dotDuration * 3;
+    const symbolGap = dotDuration; // Gap between symbols within a letter
+
+    let currentTime = 0;
     morseCode.split("").forEach((symbol, index) => {
-      const span = document.createElement("span");
-      span.textContent = symbol === "." ? "●" : "▬";
-      span.style.marginRight = "8px";
-      span.style.fontSize = "32px";
-      display.appendChild(span);
-      playMorseTone(symbol, index * 0.4);
+      const duration = (symbol === '.') ? dotDuration : dashDuration;
+      playMorseTone(symbol, currentTime);
+
+      // Move to next symbol: add symbol duration + gap
+      currentTime += duration + symbolGap;
     });
   }
   
   function startTimer() {
     clearInterval(timerInterval);
-    timeRemaining = 20;
+    timeRemaining = cheatMode ? 20 : 90; // 90s normal, 20s cheat mode
     updateTimerDisplay();
-    
+
     timerInterval = setInterval(() => {
       timeRemaining--;
       updateTimerDisplay();
-      
+
       if (timeRemaining <= 0) {
         clearInterval(timerInterval);
         endGame();
@@ -1620,9 +1779,11 @@
   
   function getPointsForGameType() {
     switch(gameType) {
-      case "lettersNumbers": return 2;
-      case "lettersNumbersPunctuation": return 3;
-      default: return 1;
+      case "level2": return 2;
+      case "level3": return 3;
+      case "level4": return 4;
+      case "level5": return 5;
+      default: return 1; // level1
     }
   }
   
@@ -1695,9 +1856,11 @@
 
   function getGameTypeLabel(gameType) {
     const labels = {
-      'letters': 'Letters',
-      'lettersNumbers': 'Ltr+Num',
-      'lettersNumbersPunctuation': 'Full'
+      'level1': 'Lvl 1: Letters',
+      'level2': 'Lvl 2: Ltr+Num',
+      'level3': 'Lvl 3: Ltr+Num (Sound)',
+      'level4': 'Lvl 4: Full',
+      'level5': 'Lvl 5: Full (Sound)'
     };
     return labels[gameType] || gameType;
   }
@@ -1733,9 +1896,11 @@
     document.getElementById("userGuess").textContent = answer;
     
     if (answer === currentLetter) {
-      // Add points
-      score += getPointsForGameType();
-      
+      // Add points: level multiplier × WPM
+      score += getPointsForGameType() * currentWPM;
+
+      correctAnswersCount++; // Track for certificate
+
       // Add to progress display with highlight effect
       const morse = activeMorseMap[currentLetter];
       addToProgressDisplay(currentLetter, morse, true); // Correct answer
@@ -1772,7 +1937,9 @@
     drawMorse(morse);
 
     document.getElementById("userGuess").textContent = "";
-    
+
+    totalQuestionsAsked++; // Track for certificate eligibility
+
     // Fix: Remove reference to old message element and just update cheat display
     updateCheatDisplay();
   }
@@ -1816,7 +1983,7 @@
       age: parseInt(age),
       scout_group: scoutGroup,
       country: country,
-      level: currentLevel, // Captured from game speed (default 0)
+      level: currentWPM, // Now stores actual WPM
       created_at: new Date().toISOString()
     };
 
@@ -1850,7 +2017,7 @@
             age: highScore.age,
             scout_group: highScore.scout_group,
             country: highScore.country,
-            level: highScore.level,
+            level: currentWPM,
             created_at: highScore.created_at
           }]);
 
@@ -1987,7 +2154,14 @@
     // We don't need to show the last wrong answer since game doesn't end on wrong answers anymore
     document.getElementById("lastWrongAnswer").style.display = "none";
 
-    // Check for high score and show appropriate UI
+    // Check certificate eligibility FIRST
+    if (checkCertificateEligibility()) {
+      showCertificateModal();
+      window.currentScoreId = currentScoreId;
+      return;
+    }
+
+    // Regular high score flow
     const isHighScore = score > 0 && (highScores.length < 10 || score > highScores[highScores.length-1].score);
 
     if (isHighScore) {
@@ -2016,12 +2190,34 @@
 
   function toggleCheatMode() {
     cheatMode = !cheatMode;
-    
+
     // Show or hide cheat indicator
     document.getElementById('cheatIndicator').style.display = cheatMode ? 'block' : 'none';
-    
+
+    // If game is active, update timer for cheat mode
+    if (gameActive && cheatMode) {
+      timeRemaining = 20;
+      updateTimerDisplay();
+    }
+
     // If cheat mode is now active, show the current answer
     updateCheatDisplay();
+  }
+
+  function checkCertificateEligibility() {
+    // Must be Level 5, 100% correct, and WPM > 5
+    const isLevel5 = gameType === 'level5';
+    const perfectScore = totalQuestionsAsked > 0 && correctAnswersCount === totalQuestionsAsked;
+    const wpmThreshold = currentWPM > 5;
+    return isLevel5 && perfectScore && wpmThreshold;
+  }
+
+  function showCertificateModal() {
+    document.getElementById("certWPM").textContent = currentWPM;
+    document.getElementById("certCorrect").textContent = correctAnswersCount;
+    document.getElementById("certTotal").textContent = totalQuestionsAsked;
+    document.getElementById("certScore").textContent = score;
+    document.getElementById("congratsModal").style.display = "flex";
   }
   
   function updateCheatDisplay() {
@@ -2064,29 +2260,30 @@
 
   function setGameType(type) {
     gameType = type;
-    
+
+    // Determine if this is a sound-only level (3 and 5)
+    visualDisplayEnabled = (type !== "level3" && type !== "level5");
+
     switch(type) {
-      case "letters":
+      case "level1":
         activeMorseMap = {...morseLetters};
         break;
-      case "lettersNumbers":
+      case "level2":
+      case "level3":
         activeMorseMap = {...morseLetters, ...morseNumbers};
         break;
-      case "lettersNumbersPunctuation":
+      case "level4":
+      case "level5":
         activeMorseMap = {...morseLetters, ...morseNumbers, ...morsePunctuation};
         break;
     }
-    
+
+    // Update UI button states
     document.querySelectorAll('.gameTypeBtn').forEach(btn => {
       btn.classList.remove('active');
     });
-    
-    if (type === "letters") {
-      document.getElementById("lettersOnly").classList.add('active');
-    } else {
-      document.getElementById(type).classList.add('active');
-    }
-    
+    document.getElementById(type).classList.add('active');
+
     updateScoreBoard();
   }
 
