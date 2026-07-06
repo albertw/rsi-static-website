@@ -399,20 +399,21 @@
     }
     /* Column width specifications */
     #highScoreTable th:nth-child(1) { width: 5%; }
-    #highScoreTable th:nth-child(2) { width: 18%; }
+    #highScoreTable th:nth-child(2) { width: 16%; }
     #highScoreTable th:nth-child(3) { width: 10%; }
-    #highScoreTable th:nth-child(4) { width: 12%; }
-    #highScoreTable th:nth-child(5) { width: 12%; }
-    #highScoreTable th:nth-child(6) { width: 12%; }
-    #highScoreTable th:nth-child(7) { width: 10%; }
-    #highScoreTable th:nth-child(8) { width: 11%; }
+    #highScoreTable th:nth-child(4) { width: 6%; }
+    #highScoreTable th:nth-child(5) { width: 11%; }
+    #highScoreTable th:nth-child(6) { width: 11%; }
+    #highScoreTable th:nth-child(7) { width: 11%; }
+    #highScoreTable th:nth-child(8) { width: 10%; }
+    #highScoreTable th:nth-child(9) { width: 10%; }
     /* Mobile responsive */
     @media (max-width: 768px) {
       #highScoreTable {
         font-size: 8px;
       }
-      #highScoreTable th:nth-child(4),
-      #highScoreTable th:nth-child(6) {
+      #highScoreTable th:nth-child(5),
+      #highScoreTable th:nth-child(7) {
         display: none;
       }
     }
@@ -726,7 +727,22 @@
       <div id="nameInputContainer" style="display: none;">
         <p>You got a high score! Enter your details:</p>
         <input type="text" id="playerNameInput" placeholder="Your Name" maxlength="50" required style="margin-bottom: 10px; width: 100%; padding: 8px; box-sizing: border-box; background-color: #000; color: #fff; border: 2px solid #444; border-radius: 4px;">
-        <input type="text" id="sectionInput" placeholder="Section (e.g., Cubs, Scouts, Ventures)" maxlength="50" required style="margin-bottom: 10px; width: 100%; padding: 8px; box-sizing: border-box; background-color: #000; color: #fff; border: 2px solid #444; border-radius: 4px;">
+        <select id="sectionInput" required style="margin-bottom: 10px; width: 100%; padding: 8px; box-sizing: border-box; background-color: #000; color: #fff; border: 2px solid #444; border-radius: 4px; font-family: 'Press Start 2P', cursive, sans-serif; font-size: 12px;">
+          <option value="">Select Section</option>
+          <option value="Rainbow">Rainbow</option>
+          <option value="Ladybird">Ladybird</option>
+          <option value="Squirrel">Squirrel</option>
+          <option value="Brownie">Brownie</option>
+          <option value="Cub">Cub</option>
+          <option value="Guide">Guide</option>
+          <option value="Scout">Scout</option>
+          <option value="Venture">Venture</option>
+          <option value="Ranger">Ranger</option>
+          <option value="Explorer">Explorer</option>
+          <option value="Senior Branch">Senior Branch</option>
+          <option value="Other">Other</option>
+        </select>
+        <input type="number" id="ageInput" placeholder="Age" min="1" max="99" required style="margin-bottom: 10px; width: 100%; padding: 8px; box-sizing: border-box; background-color: #000; color: #fff; border: 2px solid #444; border-radius: 4px;">
         <input type="text" id="scoutGroupInput" placeholder="Scout Group (e.g., 123th Dublin)" maxlength="50" required style="margin-bottom: 10px; width: 100%; padding: 8px; box-sizing: border-box; background-color: #000; color: #fff; border: 2px solid #444; border-radius: 4px;">
         <input type="text" id="countryInput" placeholder="Country" maxlength="50" required style="margin-bottom: 10px; width: 100%; padding: 8px; box-sizing: border-box; background-color: #000; color: #fff; border: 2px solid #444; border-radius: 4px;">
         <div id="formValidationMessage" style="color: #f44336; font-size: 12px; margin-top: 5px; display: none;">
@@ -749,6 +765,7 @@
           <th>Pos</th>
           <th>Name</th>
           <th>Section</th>
+          <th>Age</th>
           <th>Group</th>
           <th>Country</th>
           <th>Game</th>
@@ -757,7 +774,7 @@
         </tr>
       </thead>
       <tbody id="highScores">
-        <tr><td colspan="8">No high scores yet</td></tr>
+        <tr><td colspan="9">No high scores yet</td></tr>
       </tbody>
     </table>
   </div>
@@ -1663,6 +1680,7 @@
             <td>${i + 1}</td>
             <td>${s.name || 'N/A'}</td>
             <td>${s.section || 'N/A'}</td>
+            <td>${s.age || 'N/A'}</td>
             <td>${s.scout_group || 'N/A'}</td>
             <td>${s.country || 'N/A'}</td>
             <td>${getGameTypeLabel(s.game_type)}</td>
@@ -1671,7 +1689,7 @@
           </tr>
         `).join("");
     } else {
-      hsTableBody.innerHTML = "<tr><td colspan='8'>No high scores yet</td></tr>";
+      hsTableBody.innerHTML = "<tr><td colspan='9'>No high scores yet</td></tr>";
     }
   }
 
@@ -1762,19 +1780,26 @@
   function saveHighScore() {
     // Get all required field values
     const name = document.getElementById("playerNameInput").value.trim();
-    const section = document.getElementById("sectionInput").value.trim();
+    const section = document.getElementById("sectionInput").value;
+    const age = document.getElementById("ageInput").value;
     const scoutGroup = document.getElementById("scoutGroupInput").value.trim();
     const country = document.getElementById("countryInput").value.trim();
 
     // Validate all required form fields
-    if (!name || !section || !scoutGroup || !country) {
+    if (!name || !section || !age || !scoutGroup || !country) {
       document.getElementById('formValidationMessage').style.display = 'block';
       return;
     }
 
-    // Validate field lengths
+    // Validate field lengths and age range
     if (name.length > 50 || scoutGroup.length > 50 || country.length > 50) {
       document.getElementById('formValidationMessage').textContent = 'Fields must be 50 characters or less';
+      document.getElementById('formValidationMessage').style.display = 'block';
+      return;
+    }
+
+    if (age < 1 || age > 99) {
+      document.getElementById('formValidationMessage').textContent = 'Age must be between 1 and 99';
       document.getElementById('formValidationMessage').style.display = 'block';
       return;
     }
@@ -1788,6 +1813,7 @@
       game_type: gameType,
       event_id: currentEvent.id,
       section: section,
+      age: parseInt(age),
       scout_group: scoutGroup,
       country: country,
       level: currentLevel, // Captured from game speed (default 0)
@@ -1821,6 +1847,7 @@
             game_type: highScore.game_type,
             event_id: highScore.event_id,
             section: highScore.section,
+            age: highScore.age,
             scout_group: highScore.scout_group,
             country: highScore.country,
             level: highScore.level,
