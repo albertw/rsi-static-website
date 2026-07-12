@@ -58,9 +58,13 @@ jobs:
           echo "=== File content AFTER sed ==="
           cat game-config.js
 
+      - name: Create CNAME file
+        run: |
+          echo "radioscouting.ie" > CNAME
+          echo "www.radioscouting.ie" >> CNAME
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./
-          cname: radioscouting.ie
