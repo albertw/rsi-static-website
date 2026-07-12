@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Morse Code Game - High Score Leaderboard</title>
+  <!-- Press Start 2P retro font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Config -->
+  <script src="game-config-local.js"></script>
+  <script src="game-config.js"></script>
+  <style>
+    /* Full-screen layout with larger table */
+    body {
+      font-family: 'Press Start 2P', cursive, sans-serif;
+      background-color: #000;
+      color: #fff;
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    .nav-buttons {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      z-index: 1000;
+    }
+    .nav-buttons button {
+      font-family: 'Press Start 2P', cursive, sans-serif;
+      font-size: 12px;
+      padding: 6px 10px;
+      background-color: #333;
+      color: white;
+      border: 2px solid #555;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .nav-buttons button:hover {
+      background-color: #555;
+      border-color: #777;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .header h1 {
+      font-size: 32px;
+      color: #4CAF50;
+      margin-bottom: 10px;
+    }
+    .header p {
+      font-size: 14px;
+      color: #888;
+    }
+    #leaderboardContainer {
+      max-width: 1400px;
+      margin: 0 auto;
+      background-color: #111;
+      border-radius: 10px;
+      padding: 20px;
+      border: 3px solid #333;
+    }
+    #highScoreTable {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      font-size: 10px;
+      background-color: #000;
+      border: 3px solid #333;
+      border-radius: 5px;
+      table-layout: fixed;
+    }
+    #highScoreTable th {
+      padding: 8px 5px;
+      text-align: center;
+      background-color: #000;
+      color: #4CAF50;
+      border-bottom: 2px solid #4CAF50;
+    }
+    #highScoreTable td {
+      padding: 6px 4px;
+      border-bottom: 1px solid #333;
+      background-color: #000;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    #highScoreTable tr:hover {
+      background-color: #1a1a1a;
+    }
+    /* Top 10 have arcade color animation */
+    @keyframes arcadeColorCycle {
+      0% { color: #FF0000; background-color: rgba(255,0,0,0.1); }
+      16.6% { color: #FF00FF; background-color: rgba(255,0,255,0.1); }
+      33.3% { color: #00FFFF; background-color: rgba(0,255,255,0.1); }
+      50% { color: #FFFF00; background-color: rgba(255,255,0,0.1); }
+      66.6% { color: #00FF00; background-color: rgba(0,255,0,0.1); }
+      83.3% { color: #0000FF; background-color: rgba(0,0,255,0.1); }
+      100% { color: #FF0000; background-color: rgba(255,0,0,0.1); }
+    }
+    #highScoreTable tr:nth-child(1) td,
+    #highScoreTable tr:nth-child(2) td,
+    #highScoreTable tr:nth-child(3) td,
+    #highScoreTable tr:nth-child(4) td,
+    #highScoreTable tr:nth-child(5) td,
+    #highScoreTable tr:nth-child(6) td,
+    #highScoreTable tr:nth-child(7) td,
+    #highScoreTable tr:nth-child(8) td,
+    #highScoreTable tr:nth-child(9) td,
+    #highScoreTable tr:nth-child(10) td {
+      animation: arcadeColorCycle 4s infinite;
+    }
+    #highScoreTable tr:nth-child(2) td { animation-delay: -0.4s; }
+    #highScoreTable tr:nth-child(3) td { animation-delay: -0.8s; }
+    #highScoreTable tr:nth-child(4) td { animation-delay: -1.2s; }
+    #highScoreTable tr:nth-child(5) td { animation-delay: -1.6s; }
+    #highScoreTable tr:nth-child(6) td { animation-delay: -2.0s; }
+    #highScoreTable tr:nth-child(7) td { animation-delay: -2.4s; }
+    #highScoreTable tr:nth-child(8) td { animation-delay: -2.8s; }
+    #highScoreTable tr:nth-child(9) td { animation-delay: -3.2s; }
+    #highScoreTable tr:nth-child(10) td { animation-delay: -3.6s; }
+    .loading {
+      text-align: center;
+      font-size: 20px;
+      padding: 50px;
+      color: #4CAF50;
+    }
+    .noScores {
+      text-align: center;
+      font-size: 16px;
+      padding: 50px;
+      color: #888;
+    }
+    @media (max-width: 768px) {
+      #highScoreTable {
+        font-size: 8px;
+      }
+      #highScoreTable th:nth-child(5),
+      #highScoreTable th:nth-child(7) {
+        display: none;
+      }
+      #highScoreTable td:nth-child(5),
+      #highScoreTable td:nth-child(7) {
+        display: none;
+      }
+      .header h1 {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="nav-buttons">
+    <button id="backToGameBtn">Back to Game</button>
+    <button id="rsiHomeBtn">RSI Home</button>
+  </div>
+
+  <div class="header">
+    <h1>🏆 High Score Leaderboard 🏆</h1>
+    <p>Top 100 Morse Code Champions</p>
+    <p id="eventInfo" style="color: #4CAF50; font-size: 12px;"></p>
+  </div>
+
+  <div id="leaderboardContainer">
+    <div id="loading" class="loading">Loading scores...</div>
+    <table id="highScoreTable" style="display: none;">
+      <thead>
+        <tr>
+          <th style="width: 3%;">Pos</th>
+          <th style="width: 25%;">Name</th>
+          <th style="width: 12%;">Section</th>
+          <th style="width: 3%;">Age</th>
+          <th style="width: 27%;">Group</th>
+          <th style="width: 12%;">Country</th>
+          <th style="width: 5%;">Game</th>
+          <th style="width: 6%;">WPM</th>
+          <th style="width: 7%;">Score</th>
+        </tr>
+      </thead>
+      <tbody id="highScores">
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    let supabaseClient;
+    let isSupabaseAvailable = false;
+    let currentEvent = null;
+
+    // Initialize
+    if (typeof gameConfig === 'undefined') {
+      window.gameConfig = {
+        storage_mode: 'local',
+        event_id: 'global',
+        event_name: 'Global Leaderboard',
+        supabase_url: null,
+        supabase_key: null
+      };
+    }
+
+    // Initialize Supabase
+    async function initializeSupabase() {
+      if (gameConfig.storage_mode === 'local') {
+        loadFromLocalStorage();
+        return;
+      }
+
+      const supabaseUrl = gameConfig.supabase_url;
+      const supabaseKey = gameConfig.supabase_key;
+
+      if (supabaseUrl && supabaseKey) {
+        try {
+          supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+          isSupabaseAvailable = true;
+          await loadFromSupabase();
+        } catch (e) {
+          console.log("Supabase init failed, using local:", e);
+          loadFromLocalStorage();
+        }
+      } else {
+        loadFromLocalStorage();
+      }
+    }
+
+    // Load from Supabase (top 100)
+    async function loadFromSupabase() {
+      try {
+        const eventId = gameConfig.event_id || 'global';
+        let query = supabaseClient
+          .from('high_scores')
+          .select('*')
+          .order('score', { ascending: false })
+          .limit(100);
+
+        if (eventId !== 'global') {
+          query = query.eq('event_id', eventId);
+        }
+
+        const { data, error } = await query;
+
+        if (!error && data) {
+          displayScores(data);
+        } else {
+          loadFromLocalStorage();
+        }
+      } catch (e) {
+        console.log("Supabase load failed:", e);
+        loadFromLocalStorage();
+      }
+    }
+
+    // Load from localStorage
+    function loadFromLocalStorage() {
+      const scores = JSON.parse(localStorage.getItem("highScores") || "[]");
+      displayScores(scores.slice(0, 100));
+    }
+
+    // Display scores
+    function displayScores(scores) {
+      document.getElementById('loading').style.display = 'none';
+      const table = document.getElementById('highScoreTable');
+      const tbody = document.getElementById('highScores');
+
+      if (scores.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="noScores">No high scores yet. Be the first!</td></tr>';
+        table.style.display = 'table';
+        return;
+      }
+
+      tbody.innerHTML = scores.map((s, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${s.name || 'N/A'}</td>
+          <td>${s.section || 'N/A'}</td>
+          <td>${s.age || 'N/A'}</td>
+          <td>${s.scout_group || 'N/A'}</td>
+          <td>${s.country || 'N/A'}</td>
+          <td>${getGameTypeLabel(s.game_type)}</td>
+          <td>${s.level || 'N/A'} WPM</td>
+          <td>${s.score}</td>
+        </tr>
+      `).join('');
+
+      table.style.display = 'table';
+    }
+
+    // Game type labels
+    function getGameTypeLabel(gameType) {
+      const labels = {
+        'level1': 'Lvl 1',
+        'level2': 'Lvl 2',
+        'level3': 'Lvl 3',
+        'level4': 'Lvl 4',
+        'level5': 'Lvl 5'
+      };
+      return labels[gameType] || gameType || 'N/A';
+    }
+
+    // Event listeners
+    document.getElementById('backToGameBtn').addEventListener('click', () => {
+      window.location.href = 'morsegame.html';
+    });
+
+    document.getElementById('rsiHomeBtn').addEventListener('click', () => {
+      window.location.href = 'index.html';
+    });
+
+    // Load on page load
+    initializeSupabase();
+  </script>
+</body>
+</html>
