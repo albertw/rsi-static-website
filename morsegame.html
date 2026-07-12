@@ -545,7 +545,8 @@
       top: 10px;
       left: 10px;
       display: flex;
-      gap: 10px;
+      flex-direction: column;
+      gap: 5px;
       z-index: 1000;
     }
     .nav-buttons button {
@@ -630,6 +631,37 @@
     #creditsContainer a:hover {
       text-decoration: underline;
     }
+    #rulesContainer {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      max-width: 450px;
+      background-color: #000;
+      color: white;
+      border: 3px solid #2196F3;
+      border-radius: 5px;
+      padding: 15px;
+      font-size: 10px;
+      text-align: left;
+      z-index: 1001;
+      display: none;
+      box-shadow: 0 0 10px rgba(0,0,0,0.6);
+      line-height: 1.6;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    #closeRules {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 0 5px;
+      margin: 0;
+    }
   </style>
 </head>
 <body>
@@ -637,13 +669,44 @@
   <div id="cheatIndicator">CHEAT MODE ACTIVE</div>
 
   <div class="nav-buttons">
+    <button id="rulesButton">Rules</button>
     <button id="creditsButton">Credits</button>
+    <button id="certificateButton">Certificate</button>
     <button id="gameHomeBtn" class="nav-btn">Game Home</button>
     <button id="rsiHomeBtn" class="nav-btn">RSI Home</button>
   </div>
   <div id="creditsContainer">
     <button id="closeCredits">×</button>
     <h4>Credits</h4>
+    <p>Based on the original "Morse Code Game" designed by Peter Young for the 35th Jamboree on the air</p>
+    <p>Sounds used in this game are used under a creative commons license:</p>
+    <p>8-Bit - Error by Breviceps -- <a href="https://freesound.org/s/450616/" target="_blank">https://freesound.org/s/450616/</a> -- License: Creative Commons 0</p>
+    <p>8-bit start-game by KSAplay -- <a href="https://freesound.org/s/758957/" target="_blank">https://freesound.org/s/758957/</a> -- License: Creative Commons 0</p>
+  </div>
+
+  <div id="rulesContainer">
+    <button id="closeRules">×</button>
+    <h4>Game Rules</h4>
+    <ul style="text-align: left; padding-left: 20px;">
+      <li>You have 90 seconds to answer as many questions as possible</li>
+      <li>The game ends when the timer reaches 0</li>
+      <li>Select your Morse speed (5-50 WPM) - Higher speed = Higher score!</li>
+      <li>Scoring: (correct answers × level multiplier) × WPM
+        <ul>
+          <li>Level 1 (Letters): ×1</li>
+          <li>Level 2 (Letters + Numbers): ×2</li>
+          <li>Level 3 (Letters + Numbers, Sound Only): ×3</li>
+          <li>Level 4 (Letters + Numbers + Punctuation): ×4</li>
+          <li>Level 5 (Full, Sound Only): ×5</li>
+        </ul>
+      </li>
+      <li>Sound-only levels (3 & 5) hide the visual display</li>
+      <li>Earn a certificate: 100% correct in Level 5 at speed >5 WPM!</li>
+      <li>Type "cheat" during gameplay for 20-second test mode</li>
+    </ul>
+  </div>
+
+  <div id="adminContainer">
     <p>Based on the original "Morse Code Game" designed by Peter Young for the 35th Jamboree on the air</p>
     <p>Sounds used in this game are used under a creative commons license:</p>
     <p>8-Bit - Error by Breviceps -- <a href="https://freesound.org/s/450616/" target="_blank">https://freesound.org/s/450616/</a> -- License: Creative Commons 0</p>
@@ -681,25 +744,6 @@
       <button id="level3" class="gameTypeBtn">Level 3: Letters + Numbers (Sound Only)</button>
       <button id="level4" class="gameTypeBtn">Level 4: Letters + Numbers + Punctuation</button>
       <button id="level5" class="gameTypeBtn">Level 5: Full (Sound Only)</button>
-    </div>
-    <div class="gameRules">
-      <p><strong>Game Rules:</strong></p>
-      <ul style="text-align: left;">
-        <li>You have 90 seconds to answer as many questions as possible</li>
-        <li>The game ends when the timer reaches 0</li>
-        <li>Select your Morse speed (5-50 WPM) - Higher speed = Higher score!</li>
-        <li>Scoring: (correct answers × level multiplier) × WPM
-          <ul>
-            <li>Level 1 (Letters): ×1</li>
-            <li>Level 2 (Letters + Numbers): ×2</li>
-            <li>Level 3 (Letters + Numbers, Sound Only): ×3</li>
-            <li>Level 4 (Letters + Numbers + Punctuation): ×4</li>
-            <li>Level 5 (Full, Sound Only): ×5</li>
-          </ul>
-        </li>
-        <li>Sound-only levels (3 & 5) hide the visual display</li>
-        <li>Earn a certificate: 100% correct in Level 5 at speed >5 WPM!</li>
-      </ul>
     </div>
     <button id="startBtn" class="primary">Start Game</button>
   </div>
@@ -1488,9 +1532,23 @@
     document.getElementById("creditsButton").addEventListener("click", function() {
       document.getElementById("creditsContainer").style.display = "block";
     });
-    
+
     document.getElementById("closeCredits").addEventListener("click", function() {
       document.getElementById("creditsContainer").style.display = "none";
+    });
+
+    // Rules button functionality
+    document.getElementById("rulesButton").addEventListener("click", function() {
+      document.getElementById("rulesContainer").style.display = "block";
+    });
+
+    document.getElementById("closeRules").addEventListener("click", function() {
+      document.getElementById("rulesContainer").style.display = "none";
+    });
+
+    // Certificate button functionality
+    document.getElementById("certificateButton").addEventListener("click", function() {
+      window.location.href = 'certificate.html';
     });
 
     // Admin panel buttons
