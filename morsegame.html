@@ -1606,6 +1606,8 @@
         country: "Ireland",
         level: currentWPM,
         certificate_eligible: true,
+        correct_answers: correctAnswersCount,
+        total_questions: totalQuestionsAsked,
         created_at: new Date().toISOString()
       };
 
@@ -2048,6 +2050,8 @@
       scout_group: scoutGroup,
       country: country,
       level: currentWPM, // Now stores actual WPM
+      correct_answers: correctAnswersCount,
+      total_questions: totalQuestionsAsked,
       created_at: new Date().toISOString()
     };
 
@@ -2082,6 +2086,8 @@
             scout_group: highScore.scout_group,
             country: highScore.country,
             level: currentWPM,
+            correct_answers: highScore.correct_answers,
+            total_questions: highScore.total_questions,
             created_at: highScore.created_at
           }]);
 

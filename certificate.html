@@ -578,6 +578,10 @@
           <td class="hs-value highlight" id="scoreValue"></td>
         </tr>
         <tr>
+          <td class="hs-label">► ACCURACY</td>
+          <td class="hs-value" id="accuracyValue"></td>
+        </tr>
+        <tr>
           <td class="hs-label">► SECTION</td>
           <td class="hs-value" id="sectionValue"></td>
         </tr>
@@ -740,6 +744,13 @@
         // Populate certificate
         document.getElementById('playerName').textContent = scoreData.name;
         document.getElementById('scoreValue').textContent = scoreData.score + ' PTS';
+
+        // Calculate and display accuracy
+        const accuracy = scoreData.correct_answers && scoreData.total_questions
+          ? Math.round((scoreData.correct_answers / scoreData.total_questions) * 100)
+          : 0;
+        document.getElementById('accuracyValue').textContent = accuracy + '%';
+
         document.getElementById('dateValue').textContent = new Date(scoreData.created_at).toLocaleDateString();
         document.getElementById('displayCode').textContent = codeId;
 
