@@ -20,6 +20,9 @@ The site is deployed with github actions (.github/workflows/deploy.yml). The SUP
 
 - `index.html` - Main homepage
 - `resources.html` - Resources and downloads page
+- `certificate.html` - Certificate Printing page
+- `highscore.html` - High Score page
+- `morsegame.html` - Morse Game
 - `template.html` - Template for creating new pages
 - `styles.css` - Common CSS styles
 - `header-footer.js` - Dynamic header and footer inclusion
@@ -88,16 +91,6 @@ By default if the laptop running the game has an internet connection the scores 
 This is the basic Scema for the DB:
 
 ```
-CREATE TABLE public.high_scores (
-  id text NOT NULL,
-  name text NOT NULL,
-  score integer NOT NULL,
-  game_type text NOT NULL,
-  event_id text NOT NULL,
-  created_at timestamp with time zone DEFAULT now(),
-  client_id text,
-  CONSTRAINT high_scores_pkey PRIMARY KEY (id)
-);
 CREATE TABLE public.events (
   id text NOT NULL,
   name text NOT NULL,
@@ -110,6 +103,23 @@ CREATE TABLE public.events (
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT events_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.high_scores (
+  id text NOT NULL,
+  name text NOT NULL,
+  score integer NOT NULL,
+  game_type text NOT NULL,
+  event_id text NOT NULL,
+  section text NOT NULL,
+  scout_group text NOT NULL,
+  country text NOT NULL,
+  level integer NOT NULL DEFAULT 0,
+  created_at timestamp with time zone DEFAULT now(),
+  client_id text,
+  age integer,
+  correct_answers bigint,
+  total_questions bigint,
+  CONSTRAINT high_scores_pkey PRIMARY KEY (id)
 );
 ```
 
