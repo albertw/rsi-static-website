@@ -523,6 +523,92 @@
         font-size: 40px;
       }
     }
+ @media print {
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+
+  html,
+  body {
+    display: block !important;
+    min-height: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  body::after,
+  .arcade-screen::before,
+  #searchScreen,
+  .no-print,
+  .pixel-border {
+    display: none !important;
+  }
+
+  #certificateScreen {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  #certificateScreen,
+  #certificateScreen * {
+    color: black !important;
+    text-shadow: none !important;
+    box-shadow: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .arcade-screen {
+    width: 100% !important;
+    max-width: none !important;
+    background: white !important;
+    border: 2px solid black !important;
+    border-radius: 0 !important;
+    padding: 5mm !important;
+    margin: 0 !important;
+  }
+
+  .highscore-table {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 3mm auto !important;
+  }
+
+  .highscore-table td {
+    padding: 1mm 2mm !important;
+    overflow-wrap: anywhere;
+  }
+
+  .hs-label,
+  .hs-value,
+  .arcade-screen p,
+  .custom-message,
+  .score-id {
+    font-size: 10px !important;
+  }
+
+  .hs-value.highlight {
+    font-size: 12px !important;
+  }
+
+  .player-name {
+    overflow-wrap: anywhere;
+  }
+
+  .custom-message:empty {
+    display: none !important;
+  }
+
+  tr {
+    break-inside: avoid;
+  }
+}
   </style>
 </head>
 <body>
