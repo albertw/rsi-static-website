@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <a href="index.html" class="text-white hover:text-rsi-accent transition-colors duration-300 font-medium">Home</a>
                     <a href="resources.html" class="text-white hover:text-rsi-accent transition-colors duration-300 font-medium">Resources</a>
                     <a href="morsegame.html" class="text-white hover:text-rsi-accent transition-colors duration-300 font-medium">Morse Game</a>
-                    <a href="certificate.html" class="text-white hover:text-rsi-accent transition-colors duration-300 font-medium">Certificate</a>
+                    <a href="ash.html" class="text-white hover:text-rsi-accent transition-colors duration-300 font-medium">Ashes</a>
                 </nav>
             </div>
 
