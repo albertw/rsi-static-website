@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <a href="index.html" class="block py-2 text-white hover:text-rsi-accent transition-colors duration-300">Home</a>
                 <a href="resources.html" class="block py-2 text-white hover:text-rsi-accent transition-colors duration-300">Resources</a>
                 <a href="morsegame.html" class="block py-2 text-white hover:text-rsi-accent transition-colors duration-300">Morse Game</a>
-                <a href="certificate.html" class="block py-2 text-white hover:text-rsi-accent transition-colors duration-300">Certificate</a>
+                <a href="ash.html" class="block py-2 text-white hover:text-rsi-accent transition-colors duration-300">Ashes</a>
             </nav>
         </div>
     </header>
